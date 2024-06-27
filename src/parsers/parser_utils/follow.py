@@ -17,7 +17,7 @@ print(f"sys.path: {sys.path}")
 
 # Ahora puedes importar 'first' como un módulo
 try:
-    from first import compute_local_first,compute_firsts
+    from parser_utils.first import compute_local_first,compute_firsts
     from cmp.utils import ContainerSet
     from cmp.pycompiler import Grammar
     print("Imports successful")
