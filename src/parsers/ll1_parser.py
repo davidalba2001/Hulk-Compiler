@@ -23,7 +23,6 @@ except ImportError as e:
 
 def build_non_recursive_predictive_parser(G:Grammar, M=None, firsts=None, follows=None):
     
-    # checking table...
     if M is None:
         if firsts is None:
             firsts = compute_firsts(G)
@@ -31,11 +30,8 @@ def build_non_recursive_predictive_parser(G:Grammar, M=None, firsts=None, follow
             follows = compute_follows(G, firsts)
         M = build_parsing_table(G, firsts, follows)
     
-    
-    # parser construction...
     def parser(w):
         
-        # init:
         stack = [G.EOF,G.startSymbol]
         index = 0
         left_parse = []
@@ -46,7 +42,7 @@ def build_non_recursive_predictive_parser(G:Grammar, M=None, firsts=None, follow
             
             if top == G.EOF:
                 if term == G.EOF:
-                    break  # Successful parsing
+                    break  
                 else:
                     raise ValueError("Parsing error: input not fully consumed at EOF")
             
@@ -55,7 +51,6 @@ def build_non_recursive_predictive_parser(G:Grammar, M=None, firsts=None, follow
                     index += 1
                 else:
                     raise ValueError(f"Parsing error: expected {top} but found {term}")
-            
             
             elif top in G.nonTerminals:
                 if (top,term) in M:
