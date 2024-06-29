@@ -115,15 +115,15 @@ class Token:
         Token's type.
     """
 
-    def __init__(self, lex,token_type,colum = None,line = None):
+    def __init__(self, lex,token_type,line = None,column = None):
         self.lex = lex
         self.token_type = token_type
-        self.colum = colum
+        self.colum = column
         self.line = line
 
     def __str__(self):
-        #return f'Token({self.token_type}: {self.lex})'
-        return f'{self.token_type}: {self.lex}'
+        return f'Token({self.token_type},{self.lex},{self.line},{self.column})'
+        #return f'{self.token_type}: {self.lex}'
 
     def __repr__(self):
         return str(self)

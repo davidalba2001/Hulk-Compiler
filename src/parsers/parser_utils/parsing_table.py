@@ -1,17 +1,16 @@
 import sys
 import os
 
-# Obtener la ruta del directorio actual (follow.py)
+# Obtener la ruta del directorio actual (first.py)
 current_dir = os.path.dirname(os.path.abspath(__file__))
 print(f"Current directory: {current_dir}")
 
-# Subir tres niveles para llegar a 'project_root'
+# Subir cuatro niveles para llegar a 'project_root'
 project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
 print(f"Project root: {project_root}")
 
-# Agregar 'project_root/src/parsers/parser_utils' a sys.path para importar 'first.py'
-parser_utils_path = os.path.join(project_root, 'src/parsers/parser_utils')
-sys.path.append(parser_utils_path)
+# Agregar 'project_root' a sys.path
+sys.path.append(project_root)
 print(f"sys.path: {sys.path}")
 
 # Ahora puedes importar 'first' como un módulo
