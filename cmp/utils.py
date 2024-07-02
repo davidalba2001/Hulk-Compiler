@@ -58,7 +58,6 @@ class ContainerSet:
             return self.set == other
         return isinstance(other, ContainerSet) and self.set == other.set and self.contains_epsilon == other.contains_epsilon
 
-
 def inspect(item, grammar_name='G', mapper=None):
     try:
         return mapper[item]

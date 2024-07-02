@@ -11,15 +11,11 @@ project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
 parsers_path = os.path.join(project_root, 'src/parsers')
 sys.path.append(parsers_path)
 
-# Agregar 'src/lexer/automaton' a sys.path para que Python pueda encontrar los módulos en automaton
-automaton_path = os.path.join(project_root, 'src/lexer/automaton')
-sys.path.append(automaton_path)
-
 print(f"sys.path: {sys.path}")
 
 try:
     from ll1_parser import build_non_recursive_predictive_parser
-    from automata_operations import nfa_to_dfa, automata_minimization
+    from cmp.automata import nfa_to_dfa, automata_minimization
     from cmp.evaluation import evaluate_parse
     from cmp.utils import Token
     print("Imports successful")

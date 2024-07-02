@@ -16,10 +16,11 @@ try:
     from regex import Regex
     from cmp.automata import State
     from cmp.utils import Token
+    from enum import Enum
     print("Imports successful")
 except ImportError as e:
     print(f"ImportError: {e}")
-from enum import Enum
+
 
 class TokenType(Enum):
     IGNORE = "IGNORE",

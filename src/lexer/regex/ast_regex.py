@@ -1,19 +1,17 @@
 import sys
 import os
 
+# Obtener la ruta del directorio actual
 current_dir = os.path.dirname(os.path.abspath(__file__))
-print(f"Current directory: {current_dir}")
 
-project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
-print(f"Project root: {project_root}")
+# Moverse a la raíz del proyecto
+project_root = os.path.abspath(os.path.join(current_dir, os.pardir, os.pardir, os.pardir))
 
-module_path = os.path.join(project_root, 'src/lexer/automaton/')
-sys.path.append(module_path)
-print(f"sys.path: {sys.path}")
+# Agregar la carpeta raíz del proyecto al sys.path
+sys.path.append(project_root)
+
 try:
-    from dfa import DFA
-    from nfa import NFA
-    from automata_operations import automata_closure,automata_concatenation,automata_union
+    from cmp.automata import NFA,DFA,automata_closure,automata_concatenation,automata_union
     from cmp.ast import AtomicNode,UnaryNode,BinaryNode
     print("Imports successful")
 except ImportError as e:
