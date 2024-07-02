@@ -35,14 +35,20 @@ if_keyword,elif_keyword,else_keyword = G.Terminal('IF ELIF ELSE')
 true_keyword , false_keyword = G.Terminal('TRUE FALSE')
 while_keyword, for_keyword = G.Terminals('WHILE FOR ')
 
-
 ############################################################
-program %= expression + semicolon
+
+program %= statements
+
+statements %= expression + semicolon + statements
+statements %= expression + statements 
+statements %= function_def + statements
+statements %= function_def
+statements %= expression
+
 
 expression %= expression_block
 expression %= arithmetic_expr
 expression %= let_expr
-expression %= function_def
 expression %= function_call
 expression %= boolean_expr
 expression %= conditional_expr
@@ -52,10 +58,6 @@ expression %= string_expr
 
 expression_block %= brace_open + statements + brace_close
 
-statements %= statements + expression + semicolon
-statements %= expression + semicolon
-statements %= statements + expression
-statements %= expression
 
 arithmetic_expr %= arithmetic_expr + plus + term 
 arithmetic_expr %= arithmetic_expr + minus + term 
