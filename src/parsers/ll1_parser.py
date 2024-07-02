@@ -1,27 +1,23 @@
 import sys
 import os
 
-# Obtener la ruta del directorio actual (por ejemplo, ll1_parser.py)
+# Obtener la ruta del directorio actual
 current_dir = os.path.dirname(os.path.abspath(__file__))
 
-# Subir tres niveles para llegar a la raíz del proyecto
-project_root = os.path.abspath(os.path.join(current_dir, '../../..'))
+# Moverse a la raíz del proyecto
+project_root = os.path.abspath(os.path.join(current_dir, os.pardir, os.pardir))
 
-# Agregar 'src/parsers/parser_utils' a sys.path para que Python pueda encontrar el módulo 'parser_utils'
-parser_utils_path = os.path.join(project_root, 'src/parsers')
-sys.path.append(parser_utils_path)
+# Agregar la carpeta raíz del proyecto al sys.path
+sys.path.append(project_root)
 
 try:
-    from parser_utils.first import compute_firsts
-    from parser_utils.follow import compute_follows
-    from parser_utils.parsing_table import build_parsing_table
     from cmp.pycompiler import Grammar
+    from cmp.parsing import compute_firsts, compute_follows, build_parsing_table
     print("Imports successful")
 except ImportError as e:
     print(f"ImportError: {e}")
 
-
-def build_non_recursive_predictive_parser(G:Grammar, M=None, firsts=None, follows=None):
+def build_non_recursive_predictive_parser(G, M=None, firsts=None, follows=None):
     
     if M is None:
         if firsts is None:
@@ -72,15 +68,3 @@ def build_non_recursive_predictive_parser(G:Grammar, M=None, firsts=None, follow
     
     # parser is ready!!!
     return parser
-    
-G = Grammar()
-E = G.NonTerminal('E', True)
-T,F,X,Y = G.NonTerminals('T F X Y')
-plus, minus, star, div, opar, cpar, num = G.Terminals('+ - * / ( ) num')
-E %= T + X
-X %= plus + T + X | minus + T + X | G.Epsilon
-T %= F + Y
-Y %= star + F + Y | div + F + Y | G.Epsilon
-F %= num | opar + E + cpar
-
-build_non_recursive_predictive_parser(G)
