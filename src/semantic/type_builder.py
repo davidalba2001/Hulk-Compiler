@@ -146,9 +146,6 @@ class TypeBuilderVisitor():
                 prot.define_method(ext, ext_methods[ext].param_names, ext_methods[ext].param_types, ext_methods[ext].return_type, node)
             except:
                 self.errors.append(SemanticError(f'El metodo {ext} ya esta definido con {len(dec[1])} parametros en el protocolo {node.identifier}'))
+
         
-
-
-
-
-    #TODO: Terminar Protocolos
+#TODO:Terminar Protocolos

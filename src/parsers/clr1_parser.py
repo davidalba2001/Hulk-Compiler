@@ -85,7 +85,7 @@ def load_or_build(path):
         return wrapper
     return decorator
 
-@load_or_build('src/parsers/serialized/')
+#@load_or_build('serialized/')
 def build_LR1_automaton(G):
     assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
     
@@ -125,16 +125,37 @@ def build_LR1_automaton(G):
     return automaton
 
 
+path_serialized ='src/parsers/serialized/'       
 
 class LR1Parser(ShiftReduceParser):
     
     def __init__(self, G, name_Grammar, verbose=False):
         super().__init__(G, name_Grammar, verbose)
-        self.automaton = build_LR1_automaton(G)
+        self.automaton = build_LR1_automaton(self.G.AugmentedGrammar(True))
+        path_action = path_serialized + name_Grammar + '_action'
+        path_goto = path_serialized + name_Grammar + '_goto'
+        self.build_or_load(path_action,path_goto)
+    
+    def build_or_load(self,path_action,path_goto):
+        if(os.path.exists(path_action) and os.path.exists(path_goto)):
+            self.action = self.deserialize_object(path_action)  
+            self.goto = self.deserialize_object(path_goto)
+        else:
+            self._build_parsing_table()
+            self.serialize_object(self.action,path_action)
+            self.serialize_object(self.action,path_goto)
+   
+    def serialize_object(self,obj, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(obj, file)
+            
+    def deserialize_object(self,filename):
+        with open(filename, 'rb') as file:
+            return pickle.load(file)  
+    
     
     def _build_parsing_table(self):
         G = self.G.AugmentedGrammar(True)
-        
         automaton = self.automaton
         for i, node in enumerate(automaton):
             if self.verbose: print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')

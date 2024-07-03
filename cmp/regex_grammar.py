@@ -2,6 +2,8 @@ from cmp.ast import *
 from cmp.ast_regex import *
 from cmp.pycompiler import Grammar
 # No Terminales
+
+
 G_Regex = Grammar()
 
 Expression = G_Regex.NonTerminal('Expression', True)  # No terminal inicial, marcado como inicial

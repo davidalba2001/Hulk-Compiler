@@ -224,10 +224,15 @@ class Context:
         self.functions: dict[str, list[Method]]= {}
         self.protocols = {}
     def create_type(self, name:str):
-
-        if name in self.types or name in self.protocols or name in self.functions :
+        if name in self.types:
             raise SemanticError(f'Type with the same name ({name}) already in context.')
         typex = self.types[name] = Type(name)
+        return typex
+    
+    def create_funct(self, name:str):
+        if name in self.types:
+            raise SemanticError(f'Type with the same name ({name}) already in context.')
+        typex = self.func[name] = Type(name)
         return typex
 
     def get_type(self, name:str):

@@ -13,49 +13,12 @@ class ShiftReduceParser:
     SHIFT = "SHIFT"
     REDUCE = "REDUCE"
     OK = "OK"
-    path_serialized ='src/parsers/serialized/'
+    
     def __init__(self,G,name_Grammar,verbose=False):
         self.G = G
         self.verbose = verbose
         self.action = {} 
         self.goto = {}
-        path_action = self.path_serialized + name_Grammar + '_action'
-        path_goto = self.path_serialized + name_Grammar + '_goto'
-        # self._build_parsing_table()
-        # self.compare_data()
-        self.build_or_load(path_action,path_goto)     
-        
-    def build_or_load(self,path_action,path_goto):
-        if(os.path.exists(path_action) and os.path.exists(path_goto)):
-            self.action = self.deserialize_object(path_action)  
-            self.goto = self.deserialize_object(path_goto)
-        else:
-            self._build_parsing_table()
-            self.serialize_object(self.action,path_action)
-            self.serialize_object(self.action,path_goto)
-   
-    def compare_data(self):
-    # Guarda el diccionario original y el deserializado en archivos
-        original_action = self.action.copy()
-        original_goto = self.goto.copy()
-    
-        self.serialize_object(original_action, 'original_action.pkl')
-        self.serialize_object(original_goto, 'original_goto.pkl')
-    
-        deserialized_action = self.deserialize_object('original_action.pkl')
-        deserialized_goto = self.deserialize_object('original_goto.pkl')
-    
-    # Comparar los datos
-        assert original_action == deserialized_action, "Diferencia en 'action' entre los datos originales y deserializados"
-        assert original_goto == deserialized_goto, "Diferencia en 'goto' entre los datos originales y deserializados"
-
-    def serialize_object(self,obj, filename):
-        with open(filename, 'wb') as file:
-            pickle.dump(obj, file)
-            
-    def deserialize_object(self,filename):
-        with open(filename, 'rb') as file:
-            return pickle.load(file)  
 
     def _build_parsing_table(self):
         raise NotImplementedError()

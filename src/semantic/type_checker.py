@@ -120,9 +120,7 @@ class TypeCheckerVisitor():
     def visit(self, node:NumberNode, scope: Scope):
         return self.context.get_type('number')
 
-
-    #####================================================================================================#######
-
+#####================================================================================================#######
 
 #TODO: Falta implementar protocolo
     @visitor.when(AssignmentNode)
