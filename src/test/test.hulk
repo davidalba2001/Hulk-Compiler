@@ -1,0 +1,40 @@
+
+function NewEmployed(firstname,lastname) 
+{
+    let salary = salaryRamdom(500,1000) in 
+        let employed = new Employed(firstname,lastname) in employed
+}
+
+function salaryRamdom(min:Number,max)
+{
+    let vmin = min, rmax = max - min in vmin + rmax * rand()
+}
+
+function walk(msg) => print(msg)
+
+
+type Person(firstname, lastname) {
+    firstname = firstname;
+    lastname = lastname;
+
+    name() => self.firstname @@ self.lastname;
+}
+
+type Employed(firstname,lastname, salary) inherits Person(firstname,lastname)
+{
+    salary = salary
+
+    salary() => self.salary
+
+    name() => 'name' @@ base()
+
+    getdetalles() => self.name @@ "salary:" @@ salary() 
+
+    walk() =>  walk('I can\'t always run')
+}
+
+for (x in range(0,10)) 
+{
+    let firstname = 'NameEmployed' @@ x ,lastname = 'LastEmployed' @@ x in
+        let employed = NewEmployed(firstname,lastname) in print(employed)
+};
