@@ -17,6 +17,7 @@ try:
     from cmp.pycompiler import Item
     from cmp.parsing import ShiftReduceParser
     from cmp.automata import State, multiline_formatter
+    import dill as pickle 
     print("Imports successful")
 except ImportError as e:
     print(f"ImportError: {e}")
@@ -69,6 +70,22 @@ def goto_lr1(items, symbol, firsts=None, just_kernel=False):
     items = frozenset(item.NextItem() for item in items if item.NextSymbol == symbol)
     return items if just_kernel else closure_lr1(items, firsts)
 
+
+def load_or_build(path):
+    def decorator(build_method):
+        def wrapper(self, *args, **kwargs):
+            if os.path.exists(path):
+                with open(path, 'rb') as file:
+                    obj = pickle.load(file)
+            else:
+                obj = build_method(self, *args, **kwargs)
+                with open(path, 'wb') as file:
+                    pickle.dump(obj, file)
+            return obj
+        return wrapper
+    return decorator
+
+@load_or_build('src/parsers/serialized/')
 def build_LR1_automaton(G):
     assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
     
@@ -108,11 +125,17 @@ def build_LR1_automaton(G):
     return automaton
 
 
+
 class LR1Parser(ShiftReduceParser):
+    
+    def __init__(self, G, name_Grammar, verbose=False):
+        super().__init__(G, name_Grammar, verbose)
+        self.automaton = build_LR1_automaton(G)
+    
     def _build_parsing_table(self):
         G = self.G.AugmentedGrammar(True)
         
-        automaton = build_LR1_automaton(G)
+        automaton = self.automaton
         for i, node in enumerate(automaton):
             if self.verbose: print(i, '\t', '\n\t '.join(str(x) for x in node.state), '\n')
             node.idx = i
