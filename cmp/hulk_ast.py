@@ -4,7 +4,7 @@ class Node:
         self.node_type = node_type
 
 # Nodo principal del programa
-class Program(Node):
+class ProgramNode(Node):
     def __init__(self, statements, main_expression):
         super().__init__('PROGRAM')
         self.statements = statements
@@ -50,10 +50,11 @@ class BinaryNode(ExpressionNode):
 
 # Nodo para la definición de tipos
 class TypeNode(StatementNode):
-    def __init__(self, identifier, inherits_clause, type_body):
+    def __init__(self, identifier,params,superType, type_body):
         super().__init__('TYPE')
         self.identifier = identifier
-        self.inherits_clause = inherits_clause
+        self.params = params
+        self.superType = superType
         self.type_body = type_body
 
 # Nodo para la definición de funciones
@@ -67,11 +68,11 @@ class FuncNode(StatementNode):
 
 # Nodo para la definición de protocolos
 class ProtocolNode(StatementNode):
-    def __init__(self, identifier, extends_clause, protocol_body):
+    def __init__(self, identifier,superProtocol,body):
         super().__init__('PROTOCOL')
         self.identifier = identifier
-        self.extends_clause = extends_clause
-        self.protocol_body = protocol_body
+        self.superProtocol = superProtocol
+        self.body = body
 
 # Nodo para bloques de código
 class BlockNode(ExpressionNode):
@@ -126,7 +127,6 @@ class DassignmentNode(StatementNode):
         super().__init__('DASSIGNMENT')
         self.identifier = identifier
         self.type_annotation = type_annotation
-        self.expression = expression
 
 # Nodos para operadores lógicos y relacionales
 class OrNode(BinaryNode):
@@ -184,10 +184,24 @@ class BooleanNode(AtomicNode):
     def __init__(self, lex):
         super().__init__(lex)
         self.node_type = 'BOOLEAN'
+        
+class NumberNode(AtomicNode):
+    def __init__(self, lex):
+        super().__init__(lex)
+        self.node_type = 'NUMBER'
 
 # Nodo para estructuras condicionales
+
+class ConditionalNode(ExpressionNode):
+    def __init__(self, condition, true_branch, elif_nodes, false_branch):
+        self.condition = condition
+        
+        self.true_branch = true_branch
+        self.elif_nodes = elif_nodes if elif_nodes else []
+        self.false_branch = false_branch
+    
 class IfNode(ExpressionNode):
-    def __init__(self, condition, true_block, elif_nodes=None, else_node=None):
+    def __init__(self, condition, true_block, elif_nodes, else_node):
         super().__init__('IF')
         self.condition = condition
         self.true_block = true_block
@@ -227,16 +241,32 @@ class StringConcatNode(BinaryNode):
 
 # Nodo para llamadas a métodos y funciones
 class MethodCallNode(ExpressionNode):
-    def __init__(self, identifier, params):
+    def __init__(self,type_identifier,identifier, arguments):
         super().__init__('METHOD_CALL')
+        self.type_identifier = identifier
+        self.identifier = identifier
+        self.arguments = arguments
+        
+
+class MethodCallNode(ExpressionNode):
+    def __init__(self, type_identifier, method_identifier, arguments):
+        super().__init__('METHOD_CALL')
+        self.type_identifier = type_identifier 
+        self.method_identifier = method_identifier  
+        self.arguments = arguments
+        
+class MethodNode(ExpressionNode):
+    def __init__(self, identifier, params,body):
+        super().__init__('METHOD')
         self.identifier = identifier
         self.params = params
+        self.body = body
 
 class FunctionCallNode(ExpressionNode):
-    def __init__(self, identifier, params):
+    def __init__(self, identifier, arguments):
         super().__init__('FUNCTION_CALL')
         self.identifier = identifier
-        self.params = params
+        self.arguments = arguments
 
 # Nodo para instanciación de objetos
 class InstanceNode(ExpressionNode):
@@ -258,9 +288,35 @@ class AsNode(ExpressionNode):
         super().__init__('AS')
         self.expression = expression
         self.identifier = identifier
+        
+        
+class SqrtNode():
+    def __init__(self, expression):
+        super().__init__('SQRT')
+        self.expression = expression
+class SinNode():
+    def __init__(self, expression):
+        super().__init__('SIN')
+        self.expression = expression
+class CosNode():
+    def __init__(self, expression):
+        super().__init__('COS')
+        self.expr = expression
+class ExpNode():
+    def __init__(self, expression):
+        super().__init__('EXP')
+        self.expr = expression
+class RandNode():
+    def __init__(self):
+        super().__init__('RAND')
+        
+class LogNode():
+    def __init__(self,expression1,expression2):
+        super().__init__('LOG')
+        self.expression1 = expression1
+        self.expression2 = expression2
 
-# Nodo para la instrucción de impresión
-class PrintNode(StatementNode):
-    def __init__(self, expr):
+class PrintNode():
+    def __init__(self, expression):
         super().__init__('PRINT')
-        self.expr = expr
+        self.expression = expression
