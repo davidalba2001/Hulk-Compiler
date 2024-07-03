@@ -4,15 +4,17 @@ import cmp.visitor as visitor
 from typing import List
 
 
-class TypeBuilderVisitor():
-    def __init__(self,context:Context, scope: Scope, errors) -> None:
+class TypeBuilderVisitor:
+    def __init__(self, context: Context, scope: Scope, errors) -> None:
         self.context: Context = context
         self.scope: Scope = scope
         self.errors: List[str] = errors
         self.currentType: Type = None
-    @visitor.on('node')
+
+    @visitor.on("node")
     def visit(self, node, tabs):
         pass
+
     @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):
         statements: StatementsNode = node.statements
@@ -22,133 +24,257 @@ class TypeBuilderVisitor():
             self.visit(func)
         for protocol in statements.statements_protocol:
             self.visit(protocol)
+
     @visitor.when(TypeNode)
     def visit(self, node: TypeNode):
-        self.currentType: Type = self.context.get_type(node.identifier) 
-        try:
-            inheritance = self.context.get_type(node.superType.identifier)
-        except:
-            self.errors.append(SemanticError(f'El tipo  {node.inheritance} del que se hereda no esta definido'))
-            return self.context.get_type('<error>')
-        
-        self.currentType.inheritance = inheritance
-        
-        for arg in node.params:
-            name = arg[0]
-            type = arg[1]
-            try:
-                type: Type =  self.context.get_type(type)
-            except: 
-                self.errors.append(SemanticError(f'El tipo anotado como \"{type.name}\" no esta definido'))
-                return self.context.get_type('<error>')
-            try:
-                self.currentType.define_arguments(name, type)      
-            except:
-                self.errors.append(f'Existenten mas argumentos con el nombre {name}')
 
-        for attrDef in node.attributes:
-            self.visit(attrDef)
-            
-        for methodDef in node.methods:
-            self.visit(methodDef)
-            
-        # Se actualiza el tipo para cuando vea luego algun metodo
-        self.currentType = None
+        self.currentType: Type = self.context.get_type(node.identifier)
+
+        if node.base_type in ["Number", "Boolean", "String"]:
+            self.errors.append(
+                SemanticError(
+                    f"Base type '{node.base_type}' is not allowed at line {node.line}."
+                )
+            )
+
+        try:
+            # Detect circular inheritance dependencies and validate parent type
+            inheritance = self.context.get_type(node.base_type)
+            ancestor = inheritance
+            while ancestor:
+                if ancestor.name == self.currentType.name:
+                    self.errors.append(
+                        SemanticError(
+                            f'Circular dependency detected involving type "{node.identifier}" at line {node.line}.'
+                        )
+                    )
+                    break
+                ancestor = ancestor.parent
+
+        except SemanticError:
+            self.errors.append(
+                SemanticError(
+                    f'The inherited type "{node.base_type}" is not defined at line {node.line}.'
+                )
+            )
+            return
+
+        try:
+            self.currentType.set_parent(inheritance)
+        except SemanticError:
+            self.errors.append(
+                SemanticError(
+                    f"Parent type is already set for {self.node.name} at line {node.line}."
+                )
+            )
+
+        for pname, ptype in node.params:
+            try:
+                if ptype:
+                    ptype = self.context.get_type(ptype)
+                else:
+                    ptype = VarType
+            except:
+                self.errors.append(
+                    SemanticError(
+                        f'The type "{ptype}" annotated for argument "{pname}" is not defined at line {node.line}.'
+                    )
+                )
+                return
+            try:
+                self.currentType.define_arguments(pname, ptype)
+            except SemanticError:
+                self.errors.append(
+                    SemanticError(
+                        f'Argument with the name "{pname}" already exists in type "{self.currentType.name}" at line {node.line}.'
+                    )
+                )
+
+        for attribute in node.attributes:
+            self.visit(attribute)
+
+        for method in node.methods:
+            self.visit(method)
 
     @visitor.when(AssignmentNode)
     def visit(self, node: AssignmentNode):
         try:
-            attribution = self.context.get_type(node.type_annotation)
-        except:
-            self.errors.append(SemanticError(f'El tipo {node.type_annotation} anotado a el campo {node.identifier} no esta definido'))
-            return self.context.get_type('<error>')
-        if self.currentType:
-            self.currentType.define_arguments(node.identifier, attribution)
+            attribute_type = self.context.get_type(node.type_annotation)
+        except SemanticError as e:
+            self.errors.append(
+                SemanticError(
+                    f'The type "{node.type_annotation}" annotated for the field "{node.identifier}" is not defined at line {node.line}.'
+                )
+            )
+            return
+
+        if self.current_type:
+            try:
+                self.current_type.define_attribute(node.identifier, attribute_type)
+            except SemanticError as e:
+                self.errors.append(
+                    SemanticError(
+                        f'Error defining attribute "{node.identifier}" with type "{attribute_type.name}" at line {node.line}.'
+                    )
+                )
+
+
     @visitor.when(MethodNode)
     def visit(self, node: MethodNode):
-        type_annotation: TypeNode = self.context.get_type('object')
-        try: 
-            type_annotation = self.context.get_type(node.type_annotation)
-        except:
-            self.errors.append(f'El tipo de retorno {node.type_annotation} no esta definido')
-        
-        args: List = node.params
-        args_names = []
-        args_types = []
-        for param in args:
-            name, type = param
-            if name in args_names:
-                self.errors.append(SemanticError(f'Ya el nombre de variable {name} ya esta en uso'))
-                return self.context.get_type('<error>')
+        # Try to get the return type annotation
+        try:
+            return_type = self.context.get_type(node.type_annotation)
+        except SemanticError:
+            self.errors.append(
+                SemanticError(
+                    f'The return type "{node.type_annotation}" is not defined at line {node.line}.'
+                )
+            )
+            return
 
-            args_names.append(name)
+        param_names = []
+        param_types = []
+        params: List = node.params
+
+        # Process parameters
+        for pname, ptype in params:
+            # Check for duplicate parameter names
+            if pname in param_names:
+                self.errors.append(
+                    SemanticError(
+                        f'The variable name "{pname}" is already in use at line {node.line}.'
+                    )
+                )
+                return
+            else:
+                param_names.append(pname)
+
+            # Try to get the parameter type
             try:
-                self.context.get_type(type)
-                args_types.append(type)
-            except:
-                self.errors.append(f'El tipo del parametro {type} que se le pasa a la funcion {node.identifier} no esta definido')
-                return self.context.get_type('<error>')
-            
-        if self.currentType:
+                param_type = self.context.get_type(ptype)
+                param_types.append(param_type)
+            except SemanticError:
+                self.errors.append(
+                    SemanticError(
+                        f'The type of parameter "{ptype}" in function "{node.identifier}" is not defined at line {node.line}.'
+                    )
+                )
+                return
+
+        # Define the method if current_type is set
+        if self.current_type:
             try:
-                self.currentType.define_method(node.identifier, args_names, args_types, type_annotation, node)
-            except:
-                self.errors.append(SemanticError(f'La funcion {node.identifier} ya existe en el contexto de {self.currentType.name}.'))
-            
+                self.current_type.define_method(
+                    node.identifier, param_names, param_types, return_type
+                )
+            except SemanticError:
+                self.errors.append(
+                    SemanticError(
+                        f'The function "{node.identifier}" already exists in the context of "{self.current_type.name}" at line {node.line}.'
+                    )
+                )
+
     @visitor.when(FuncNode)
     def visit(self, node: FuncNode):
-        type_annotation: TypeNode = self.context.get_type('object')
-        try: 
-            type_annotation = self.context.get_type(node.type_annotation)
-        except:
-            self.errors.append(f'El tipo de retorno {node.type_annotation} no esta definido')
-            return self.context.get_type('<error>')
+        # Try to retrieve the return type annotation
+        try:
+            return_type = self.context.get_type(node.type_annotation)
+        except SemanticError:
+            self.errors.append(
+                SemanticError(
+                    f'The return type "{node.type_annotation}" is not defined at line {node.line}.'
+                )
+            )
+            return
 
-        args: List = node.params
-        args_names = []
-        args_types = []
-        for param in args:
-            name, type = param
-            if name in args_names:
-                self.errors.append(SemanticError(f'Ya el nombre de variable {name} ya esta en uso'))
-                return self.context.get_type('<error>')
-            args_names.append(name)
+        param_names = []
+        param_types = []
+
+        # Process function parameters
+        for pname, ptype in node.params:
+            # Check for duplicate parameter names
+            if pname in param_names:
+                self.errors.append(
+                    SemanticError(
+                        f'The parameter name "{pname}" is already in use at line {node.line}.'
+                    )
+                )
+                return
+            param_names.append(pname)
+
+            # Try to retrieve the parameter type
             try:
-                self.context.get_type(type)
-                args_types.append(type)
-            except:
-                self.errors.append(f'El tipo del parametro {type} que se le pasa a la funcion {node.identifier} no esta definido')
-                return self.context.get_type('<error>')
-            
-            functions = [self.context.functions[func] for func in self.context.functions
-                         if func == node.identifier and len(self.context.functions) == len(args)]
-            if functions == 0:
-                self.context.functions[node.identifier].append(Method(node.identifier, args_names, args_types, type_annotation, node))
-            else:
-                self.errors.append(SemanticError(f'La funcion {node.identifier} ya esta definida con {len(args)} argumentos'))
+                param_type = self.context.get_type(ptype)
+                param_types.append(param_type)
+            except SemanticError:
+                self.errors.append(
+                    SemanticError(
+                        f'The type "{ptype}" for parameter "{pname}" in function "{node.identifier}" is not defined at line {node.line}.'
+                    )
+                )
+                return
+
+        # Attempt to create or register the function in the context
+        try:
+            self.context.create_function(node.identifier, param_names, param_types, return_type)
+        except SemanticError:
+            self.errors.append(
+                SemanticError(
+                    f'The function "{node.identifier}" is already defined with {len(node.params)} parameters at line {node.line}.'
+                )
+            )
+
+
+
+    
+    
     @visitor.when(ProtocolNode)
-    def visit(self, node:ProtocolNode):
-        prot: Protocol = self.context.get_protocol(node.identifier)
+    def visit(self, node: ProtocolNode):
+        protocol: Protocol = self.context.get_protocol(node.identifier)
         try:
             extend: Protocol = self.context.get_protocol(node.superProtocol)
         except:
-            self.errors.append(SemanticError(f'El protocolo {node.superProtocol} extendido en el protocolo {node.identifier} no esta definido'))
-            return self.context.get_type('<error>')
+            self.errors.append(
+                SemanticError(
+                    f"El protocolo {node.superProtocol} extendido en el protocolo {node.identifier} no esta definido"
+                )
+            )
+            return
+        
+        
+        
         body = node.body
         for dec in body:
             try:
-                prot.define_method(dec[0], [name for (name,_) in dec[1]], [typex for (_, typex) in dec[1]], dec[0], node)
+                protocol.define_method(
+                    dec[0],
+                    [name for (name, _) in dec[1]],
+                    [typex for (_, typex) in dec[1]],
+                    dec[0],
+                    node,
+                )
             except:
-                self.errors.append(SemanticError(f'El metodo {dec[0]} ya esta definido con {len(dec[1])} parametros'))
+                self.errors.append(
+                    SemanticError(
+                        f"El metodo {dec[0]} ya esta definido con {len(dec[1])} parametros"
+                    )
+                )
         ext_methods: dict[str, Method] = extend.methods
         for ext in ext_methods:
             try:
-                prot.define_method(ext, ext_methods[ext].param_names, ext_methods[ext].param_types, ext_methods[ext].return_type, node)
+                protocol.define_method(
+                    ext,
+                    ext_methods[ext].param_names,
+                    ext_methods[ext].param_types,
+                    ext_methods[ext].return_type,
+                    node,
+                )
             except:
-                self.errors.append(SemanticError(f'El metodo {ext} ya esta definido con {len(dec[1])} parametros en el protocolo {node.identifier}'))
-        
+                self.errors.append(
+                    SemanticError(
+                        f"El metodo {ext} ya esta definido con {len(dec[1])} parametros en el protocolo {node.identifier}"
+                    )
+                )
 
 
-
-
-    #TODO: Terminar Protocolos
+# TODO:Terminar Protocolos

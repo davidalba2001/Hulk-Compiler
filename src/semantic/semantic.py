@@ -70,7 +70,6 @@ class Method:
         self.param_names = param_names
         self.param_types = params_types
         self.return_type = return_type
-        self.definition = node
 
     def __str__(self):
         params = ', '.join(f'{n}:{t.name}' for n,t in zip(self.param_names, self.param_types))
@@ -84,11 +83,11 @@ class Method:
 class Type:
     def __init__(self, name:str):
         self.name = name
-        self.inheritance: Type = None
         self.arguments: Argument = []
         self.attributes:Attribute = []
         self.methods: Method = []
         self.parent: Type = None
+        self.arguments_parent = None
 
     def set_parent(self, parent):
         if self.parent is not None:
@@ -134,12 +133,12 @@ class Type:
             except SemanticError:
                 raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
 
-    def define_method(self, name:str, param_names:list, param_types:list, return_type, node):
+    def define_method(self, name:str, param_names:list, param_types:list, return_type):
         methods = [len(method.param_names) for method in self.methos if name == method.name]
         if len(param_names) in methods:
             raise SemanticError(f'Method "{name}" already defined in {self.name} with {len(param_names)} params')
 
-        method = Method(name, param_names, param_types, return_type, node)
+        method = Method(name, param_names, param_types, return_type)
         self.methods.append(method)
         return method
 
@@ -237,6 +236,21 @@ class Context:
             raise SemanticError(f'The function name "{name}" has already been taken.')
         self.functions[name] = []
         return self.functions[name]
+    
+    def create_function(self, name: str, param_names: list[str], param_types: list[str], return_type: str):
+        try:
+            functions: list[Method] = self.functions[name]
+            is_defined = any(len(param_names) == len(function.param_names) for function in functions)
+            
+            if is_defined:
+                raise SemanticError(f'The function name "{name}" with {len(param_names)} parameters is already defined.')
+            else:
+                self.functions[name].append(Method(name, param_names, param_types, return_type))
+        except KeyError:
+
+            self.functions[name] = [Method(name, param_names, param_types, return_type)]
+
+        
     
     def create_protocol(self, name: str) -> Protocol:
         if name in self.types or name in self.protocols or name in self.functions:

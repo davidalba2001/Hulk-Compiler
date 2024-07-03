@@ -36,12 +36,12 @@ class CallableNode(Node):
 #############################################################
 
 class TypeNode(StatementNode):
-    def __init__(self, identifier,params,superType,body,line = None,ntype = 'TYPE'):
+    def __init__(self, identifier,params,base_type,body,line = None,ntype = 'TYPE'):
         super().__init__(line,ntype)
         self.identifier = identifier
         self.params = params
-        self.superType = superType
-        self.body = body
+        self.base_type = base_type[0]
+        self.base_type_args = base_type[1]
         self.attributes = body[0]
         self.methods = body[1]
         

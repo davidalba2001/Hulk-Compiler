@@ -121,7 +121,7 @@ dassignment %= identifier + dassign + expression , lambda h,s: DassignmentNode(s
 type_annotation %= colon + identifier ,lambda h,s: s[2]
 
 optional_type_annotation %= type_annotation ,lambda h,s: s[1]
-optional_type_annotation %= Hulk_G.Epsilon ,lambda h,s: "var" #Todo : Duda de si esto devuelve None pudiera modelars
+optional_type_annotation %= Hulk_G.Epsilon ,lambda h,s: "Var" #Todo : Duda de si esto devuelve None pudiera modelars
 
 let_body %=  expression ,lambda h,s: s[1] 
 # Functions Statmenets
@@ -216,7 +216,7 @@ concat_space_string %= expression + at_symbol + expression ,lambda h,s : StringC
 type_decl %= type_keyword + identifier + optional_parentized_param_list + inherits_clause + brace_open + type_body + brace_close, lambda h,s: TypeNode(s[2],s[3],s[4],s[6],s[1,line])
 
 inherits_clause %= inherits_keyword  + identifier + optional_parentized_argument_list ,lambda h,s : (s[1],s[2])
-inherits_clause %= Hulk_G.Epsilon ,lambda h,s : ("object",None) #TODO Creo que deberia ser ('object','object')
+inherits_clause %= Hulk_G.Epsilon ,lambda h,s : ("Object",None) #TODO Creo que deberia ser ('object','object')
 
 
 type_body %= attributes_or_methods ,lambda h,s : s[1]

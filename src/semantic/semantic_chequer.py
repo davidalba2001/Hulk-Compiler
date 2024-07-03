@@ -12,9 +12,8 @@ class Semantic_Check:
             self.context.create_type(type)
         for func in default_functions:
             self.context.functions[func] = None
-        self.context.types['<error>'] = ErrorType() 
+        self.context.types['ERROR'] = ErrorType() 
     def semantic_checking(self, ast):
-        
         type_collector = TypeCollectorVisitor(self.context, self.scope, self.errors)
         type_collector.visit(ast)
         if len(type_collector.errors) > 0:
