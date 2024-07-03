@@ -42,6 +42,8 @@ class TypeNode(StatementNode):
         self.params = params
         self.superType = superType
         self.body = body
+        self.attributes = body[0]
+        self.methods = body[1]
         
 class ProtocolNode(StatementNode):
     def __init__(self, identifier,superProtocol,body):
@@ -84,8 +86,8 @@ class LoopNode(ExpressionNode):
         
 class BlockNode(ExpressionNode):
     def __init__(self,expressions):
-        super().__init__(expressions,'BLOCK')
-        
+        super().__init__(ntype='BLOCK')
+        self.expressions = expressions
 class TypeInstanceNode(ExpressionNode):
     def __init__(self, ntype='TYPE_INSTANCE'):
         super().__init__(ntype)
@@ -123,8 +125,12 @@ class IsNode(ExpressionNode):
         self.expression = expression
         self.identifier = identifier
         
- #########################################################################       
-        
+ #########################################################################      
+       
+
+class IdNode(AtomicNode):
+    def __init__(self, lex, ntype='IDENTIFIER'):
+        super().__init__(lex, ntype)
 class FuncNode(CallableNode, StatementNode):
     def __init__(self, identifier, params, type_annotation, body):
         CallableNode.__init__(self, identifier, params, type_annotation, body, 'FUNCTION')

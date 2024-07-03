@@ -76,6 +76,7 @@ expression %= method_call ,lambda h,s: s[1]
 expression %= type_inst ,lambda h,s: s[1]
 expression %= vector_indexing ,lambda h,s: s[1]
 expression %= expression + as_keyword + identifier ,lambda h,s: AsNode(s[1],s[3])
+expression %= identifier , lambda h, s: IdNode(s[1])
 
 # Expression Block
 expression_block %= brace_open + statement_block + brace_close ,lambda h,s: BlockNode(s[2])
@@ -143,7 +144,7 @@ function_call %= builtin_function_call ,lambda h,s: s[1]
  
 argument_list %= argument_list + comma + argument ,lambda h,s: [s[1]] + s[2]
 argument_list %= G.Epsilon ,lambda h,s: h[0]
-argument %= expression + optional_type_annotation ,lambda h,s: (s[1],s[2])
+argument %= expression ,lambda h,s: s[1]
 
 optional_parentized_argument_list %= parentized_argument_list ,lambda h,s: s[1]
 optional_parentized_argument_list %= G.Epsilon ,lambda h,s: h[0]
