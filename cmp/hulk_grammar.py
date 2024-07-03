@@ -29,7 +29,6 @@ type_annotation,optional_type_annotation = Hulk_G.NonTerminals('TYPE_ANNOTATION 
 annotation_params,annotation_param = Hulk_G.NonTerminals('ANNOTATION_PARAMS ANNOTATION_PARAM')
 protocol_decl,protocol_body,extends_clause  = Hulk_G.NonTerminals('PROTOCOL_DECL PROTOCOL_BODY EXTENDS_CLAUSE')
 
-is_expr, as_expr = Hulk_G.NonTerminals('IS_EXPR AS_EXPR')
 statement_block,expression_statement = Hulk_G.NonTerminals('STATEMENT_BLOCK EXPRESSION_STATEMENT')
 vector_inst, vector_explicit, vector_implicit, vector_indexing = Hulk_G.NonTerminals('VECTOR_INST VECTOR_EXPLICIT VECTOR_IMPLICIT VECTOR_INDEXING')
 # TERMINALS (TERMINALES)

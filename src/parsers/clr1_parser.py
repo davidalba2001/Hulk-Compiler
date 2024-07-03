@@ -71,69 +71,16 @@ def goto_lr1(items, symbol, firsts=None, just_kernel=False):
     return items if just_kernel else closure_lr1(items, firsts)
 
 
-def load_or_build(path):
-    def decorator(build_method):
-        def wrapper(self, *args, **kwargs):
-            if os.path.exists(path):
-                with open(path, 'rb') as file:
-                    obj = pickle.load(file)
-            else:
-                obj = build_method(self, *args, **kwargs)
-                with open(path, 'wb') as file:
-                    pickle.dump(obj, file)
-            return obj
-        return wrapper
-    return decorator
-
-#@load_or_build('serialized/')
-def build_LR1_automaton(G):
-    assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
-    
-    firsts = compute_firsts(G)
-    firsts[G.EOF] = ContainerSet(G.EOF)
-    
-    start_production = G.startSymbol.productions[0]
-    start_item = Item(start_production, 0, lookaheads=(G.EOF,))
-    start = frozenset([start_item])
-    
-    closure = closure_lr1(start, firsts)
-    automaton = State(frozenset(closure), True)
-    
-    pending = [ start ]
-    visited = { start: automaton }
-    
-    while pending:
-        current = pending.pop()
-        current_state = visited[current]
-        
-        for symbol in G.terminals + G.nonTerminals:
-            
-            next_items = frozenset(goto_lr1(current_state.state,symbol,firsts))
-            
-            if not next_items:
-                continue
-            try:
-                next_state = visited[next_items]
-            except KeyError:
-                visited[next_items] = State(next_items,True)
-                pending.append(next_items)
-                next_state = visited[next_items]
-            
-            current_state.add_transition(symbol.Name, next_state)
-    
-    automaton.set_formatter(multiline_formatter)
-    return automaton
-
-
 path_serialized ='src/parsers/serialized/'       
 
 class LR1Parser(ShiftReduceParser):
     
     def __init__(self, G, name_Grammar, verbose=False):
         super().__init__(G, name_Grammar, verbose)
-        self.automaton = build_LR1_automaton(self.G.AugmentedGrammar(True))
-        path_action = path_serialized + name_Grammar + '_action'
-        path_goto = path_serialized + name_Grammar + '_goto'
+        self.name_Grammar = name_Grammar
+        self.automaton = self.build_LR1_automaton(self.G.AugmentedGrammar(True))
+        path_action = path_serialized + name_Grammar + '_action.pkl'
+        path_goto = path_serialized + name_Grammar + '_goto.pkl'
         self.build_or_load(path_action,path_goto)
     
     def build_or_load(self,path_action,path_goto):
@@ -151,8 +98,61 @@ class LR1Parser(ShiftReduceParser):
             
     def deserialize_object(self,filename):
         with open(filename, 'rb') as file:
-            return pickle.load(file)  
+            return pickle.load(file) 
+         
+    def load_or_build(self,path):
+        path =  self.name_Grammar + '_lr1.pkl' 
+        def decorator(build_method):
+            def wrapper(self,*args, **kwargs):
+                if os.path.exists(path):
+                    with open(path, 'rb') as file:
+                        obj = pickle.load(file)
+                else:
+                    obj = build_method(self, *args, **kwargs)
+                    with open(path, 'wb') as file:
+                        pickle.dump(obj, file)
+                return obj
+            return wrapper
+        return decorator
     
+    @load_or_build(path_serialized)
+    def build_LR1_automaton(self,G):
+        assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'
+        
+        firsts = compute_firsts(G)
+        firsts[G.EOF] = ContainerSet(G.EOF)
+        
+        start_production = G.startSymbol.productions[0]
+        start_item = Item(start_production, 0, lookaheads=(G.EOF,))
+        start = frozenset([start_item])
+        
+        closure = closure_lr1(start, firsts)
+        automaton = State(frozenset(closure), True)
+        
+        pending = [ start ]
+        visited = { start: automaton }
+        
+        while pending:
+            current = pending.pop()
+            current_state = visited[current]
+            
+            for symbol in G.terminals + G.nonTerminals:
+                
+                next_items = frozenset(goto_lr1(current_state.state,symbol,firsts))
+                
+                if not next_items:
+                    continue
+                try:
+                    next_state = visited[next_items]
+                except KeyError:
+                    visited[next_items] = State(next_items,True)
+                    pending.append(next_items)
+                    next_state = visited[next_items]
+                
+                current_state.add_transition(symbol.Name, next_state)
+        
+        automaton.set_formatter(multiline_formatter)
+        return automaton
     
     def _build_parsing_table(self):
         G = self.G.AugmentedGrammar(True)

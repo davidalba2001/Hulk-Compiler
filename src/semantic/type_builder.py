@@ -10,9 +10,11 @@ class TypeBuilderVisitor():
         self.scope: Scope = scope
         self.errors: List[str] = errors
         self.currentType: Type = None
+    
     @visitor.on('node')
     def visit(self, node, tabs):
         pass
+    
     @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):
         statements: StatementsNode = node.statements
@@ -22,6 +24,7 @@ class TypeBuilderVisitor():
             self.visit(func)
         for protocol in statements.statements_protocol:
             self.visit(protocol)
+   
     @visitor.when(TypeNode)
     def visit(self, node: TypeNode):
         self.currentType: Type = self.context.get_type(node.identifier) 
