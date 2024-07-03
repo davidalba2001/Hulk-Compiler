@@ -1,4 +1,5 @@
 from cmp.pycompiler import Grammar
+from cmp.hulk_ast import *
 
 G = Grammar()
 
@@ -13,7 +14,7 @@ let_expr, let_body,statement = G.NonTerminals('LET_EXPR LET_BODY STATEMENT')
 binding_list,binding= G.NonTerminals('BINDING_LIST BINDING')
 assignment, dassignment = G.NonTerminals('ASSIGNMENT DASSIGNMENT')
 constant = G.NonTerminal('CONSTANT')
-string_expr , concat_string = G.NonTerminals('STRING_EXPR CONCAT_STRING')  
+string_expr , concat_string,concat_space_string = G.NonTerminals('STRING_EXPR CONCAT_STRING CONCAT_SPACE_STRING')  
 conditional_expr,if_clause,elif_clauses,elif_clause,else_clause = G.NonTerminals('CONDITIONAL_EXPR IF_CLAUSE ELIF_CLAUSES ELIF_CLAUSE ELSE_CLAUSE')
 boolean_expr,boolean_term,boolean_factor = G.NonTerminals('BOOLEAN_EXPR BOOLEAN_TERM BOOLEAN_FACTOR')  
 relational_expr , relatable_term,relational_op= G.NonTerminals('RELATIONAL_EXPR RELATABLE_TERM RELATIONAL_OP')  
@@ -40,7 +41,7 @@ plus, minus, multiply, divide, power = G.Terminals('+ - * / ^')
 less_than, greater_than, less_equal, greater_equal, equal, not_equal = G.Terminals('< > <= >= == !=')
 and_op, or_op, not_op = G.Terminals('& | !')
 paren_open, paren_close, brace_open, brace_close,square_bracket_open, square_bracket_close = G.Terminals('( ) { } [ ]')
-comma, semicolon, at_symbol, arrow, assign, dassign,colon,dot,double_pipe = G.Terminals(', ; @ => = := : . ||')
+comma, semicolon, at_symbol,at_at_symbol, arrow, assign, dassign,colon,dot,double_pipe = G.Terminals(', ; @ @@ => = := : . ||')
 function_keyword, let_keyword, in_keyword= G.Terminals('FUNCTION LET IN')
 if_keyword,elif_keyword,else_keyword = G.Terminals('IF ELIF ELSE')
 true_keyword , false_keyword = G.Terminals('TRUE FALSE')
@@ -89,7 +90,7 @@ expression_statement %= expression ,lambda h,s: s[2]
 # Arithmetic Expression
 arithmetic_expr %= arithmetic_expr + plus + term ,lambda h,s: PlusNode(s[1],s[2])
 arithmetic_expr %= arithmetic_expr + minus + term ,lambda h,s: MinusNode(s[1],s[2])
-arithmetic_expr %= lambda h,s: s[1] 
+arithmetic_expr %= term, lambda h,s: s[1]  
 term %= term + multiply + exponential_term ,lambda h,s: MultiplyNode(s[1],s[2])
 term %= term + divide + exponential_term, lambda h,s: DivideNode(s[1],s[2])
 term %= exponential_term ,lambda h,s: s[1] 
@@ -99,9 +100,8 @@ factor %= paren_open + arithmetic_expr + paren_close, lambda h,s: s[2]
 factor %= number_literal ,lambda h,s:NumberNode(s[1])
 factor %= expression ,lambda h,s: s[1]
 factor %= constant,lambda h,s: s[1]
-constant %= e 
-constant %= pi
-
+constant %= e  ,lambda h,s: ConstantNode(s[1])
+constant %= pi ,lambda h,s: ConstantNode(s[1])
 # Let Expression
 let_expr %= let_keyword + binding_list + in_keyword + let_body ,lambda h,s: LetNode(s[2],s[3])
 
@@ -157,7 +157,7 @@ builtin_function_call %= sin_keyword + paren_open + expression + paren_close,lam
 builtin_function_call %= cos_keyword + paren_open + expression + paren_close,lambda h,s: CosNode(s[3])
 builtin_function_call %= exp_keyword + paren_open + expression + paren_close,lambda h,s: ExpNode(s[3])
 builtin_function_call %= rand_keyword + paren_open + paren_close,lambda h,s: RandNode()
-builtin_function_call %= log_keyword + paren_open + expression + comma + expression + paren_close,lambda h,s: LogNode(s[3],s[5])
+builtin_function_call %= log_keyword + paren_open + expression + comma + expression + paren_close,lambda h,s: LogNode([s[3]] + s[5])
 builtin_function_call %= print_keyword + paren_open + expression + paren_close,lambda h,s: PrintNode(s[3])
 
 # Boolean Expression
@@ -185,7 +185,7 @@ relational_expr %= relatable_term ,lambda h,s: s[1]
 relatable_term %= expression ,lambda h,s: s[1]
 
 # Conditional Expression
-conditional_expr %= if_clause + elif_clauses + else_clause ,lambda h,s: ConditionalNode(s[1][0],s[1][1],s[2],s[3])
+conditional_expr %= if_clause + elif_clauses + else_clause ,lambda h,s: IfNode(s[1][0],s[1][1],s[2],s[3])
     
 if_clause %= if_keyword + paren_open + boolean_expr + paren_close + expression,lambda h,s:(s[3],s[5])
 
@@ -202,10 +202,13 @@ while_loop %= while_keyword + paren_open + boolean_expr + paren_close + expressi
 for_loop %= for_keyword + paren_open + identifier + in_keyword + expression + paren_close + expression ,lambda h,s: ForNode(s[3],s[5],s[7])
 
 # String Expression
-string_expr %= concat_string,lambda h,s :
-string_expr %= string_literal,lambda h,s :
-concat_string %= string_literal + at_symbol + expression ,lambda h,s :
+string_expr %= concat_string,lambda h,s : s[1]
+string_expr %= concat_space_string,lambda h,s : s[1]
+string_expr %= string_literal,lambda h,s : StringNode(s[1])
 
+
+concat_string %= expression + at_symbol + expression ,lambda h,s : StringConcatNode(s[1],s[3])
+concat_space_string %= expression + at_symbol + expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3])
 # Type Statement
 type_decl %= type_keyword + identifier + optional_parentized_param_list + inherits_clause + brace_open + type_body + brace_close, lambda h,s: TypeNode(s[2],s[3],s[4],s[6])
 
@@ -215,16 +218,17 @@ inherits_clause %= G.Epsilon ,lambda h,s : ("object",None)
 
 type_body %= attributes_or_methods ,lambda h,s : s[1]
 
-attributes_or_methods %= attributes_or_methods + attribute_or_method ,lambda h,s :
-attributes_or_methods %= G.Epsilon ,lambda h,s :
+attributes_or_methods %= attributes_or_methods + attribute_or_method ,lambda h,s : list(map(lambda t: t[0] + t[1], zip(s[1],s[2])))
+attributes_or_methods %= G.Epsilon ,lambda h,s : h[0]
     
 attribute_or_method %= assignment + semicolon ,lambda h,s : ([s[1]],[])
 attribute_or_method %= method_decl,lambda h,s :lambda h,s : ([],[s[1]])
 
 method_decl %= method_inline ,lambda h,s : s[1]
 method_decl %= method_full ,lambda h,s : s[1]
-method_inline %= identifier + paren_open + param_list + paren_close + arrow + expression, lambda h,s: MethodNode(s[1],s[3],s[6])
-method_full %=  identifier + paren_open + param_list + paren_close + expression_block, lambda h,s: MethodNode(s[1],s[3],s[5])
+
+method_inline %= identifier + parentized_param_list + optional_type_annotation + arrow + expression, lambda h,s: MethodNode(s[1],s[2],s[3],s[5])
+method_full %= identifier + parentized_param_list + optional_type_annotation + expression_block, lambda h,s: MethodNode(s[1],s[2],s[3],s[4])
 # Type Instnace Expression
 type_inst %= new_keyword +  identifier + parentized_argument_list ,lambda h,s : InstanceNode(s[2],s[3])
 type_inst %= vector_inst ,lambda h,s: s[1]
@@ -236,25 +240,25 @@ method_call %= identifier + dot + identifier + paren_open + argument_list + pare
 protocol_decl %= protocol_keyword + identifier + extends_clause + brace_open + protocol_body + brace_close,lambda h,s :ProtocolNode(s[2],s[3],s[5])
 protocol_body %= signatures,lambda h,s :s[1]
 
-annotation_params %= annotation_params  + comma + annotation_param ,lambda h,s : s
-annotation_params %= G.Epsilon,lambda h,s :
-annotation_param %=  identifier + type_annotation,lambda h,s :
+annotation_params %= annotation_params  + comma + annotation_param ,lambda h,s : [s[1]] + s[2]
+annotation_params %= G.Epsilon,lambda h,s : h[0]
+annotation_param %=  identifier + type_annotation,lambda h,s : (s[1],s[2])
 
-signatures %= signatures + method_signature,lambda h,s :
+signatures %= signatures + method_signature,lambda h,s : [s[1]]+s[2]
 # Todo: Un protocolo puede estar vacio? : Modelado como que no
-signatures %= method_signature,lambda h,s :
+signatures %= method_signature,lambda h,s : s[1]
 
-method_signature %= identifier + paren_open + annotation_params + paren_close + type_annotation + semicolon,lambda h,s :
+method_signature %= identifier + paren_open + annotation_params + paren_close + type_annotation + semicolon,lambda h,s : (s[1],s[3],s[5])
 
-extends_clause %= extends_keyword + identifier,lambda h,s :
-extends_clause %= G.Epsilon,lambda h,s :
+extends_clause %= extends_keyword + identifier,lambda h,s : s[2]
+extends_clause %= G.Epsilon,lambda h,s : lambda h,s: h[0]
 
 # Vector Instance
-vector_inst %= vector_explicit ,lambda h,s :
-vector_inst %= vector_implicit,lambda h,s :
+vector_inst %= vector_explicit ,lambda h,s :s[1]
+vector_inst %= vector_implicit,lambda h,s :s[1]
 
-vector_explicit %= square_bracket_open + argument_list + square_bracket_close,lambda h,s :
-vector_implicit %= square_bracket_open + expression + double_pipe + identifier + in_keyword + expression + square_bracket_close,lambda h,s :
+vector_explicit %= square_bracket_open + argument_list + square_bracket_close,lambda h,s : ExplicitVectorNode(s[2])
+vector_implicit %= square_bracket_open + expression + double_pipe + identifier + in_keyword + expression + square_bracket_close,lambda h,s :ImplicitVectorNode(s[2],s[4],s[6])
 
 # Vector Indexing Expression
-vector_indexing %= identifier + square_bracket_open + expression + square_bracket_close,lambda h,s :
+vector_indexing %= identifier + square_bracket_open + expression + square_bracket_close,lambda h,s : VectorIndexNode(s[1],s[3])
