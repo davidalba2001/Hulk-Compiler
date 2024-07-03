@@ -91,55 +91,6 @@ class BasicHulk:
 
         return tokenize_text
 
-class PowHulk:
-    def __init__(self, G):
-        self.G = G
-
-    @property
-    def firsts(self):
-        G = self.G
-        return {
-            G['+']: ContainerSet(G['+'] , contains_epsilon=False),
-            G['-']: ContainerSet(G['-'] , contains_epsilon=False),
-            G['*']: ContainerSet(G['*'] , contains_epsilon=False),
-            G['/']: ContainerSet(G['/'] , contains_epsilon=False),
-            G['^']: ContainerSet(G['^'] , contains_epsilon=False),
-            G['(']: ContainerSet(G['('] , contains_epsilon=False),
-            G[')']: ContainerSet(G[')'] , contains_epsilon=False),
-            G['num']: ContainerSet(G['num'] , contains_epsilon=False),
-            G['E']: ContainerSet(G['num'], G['('] , contains_epsilon=False),
-            G['T']: ContainerSet(G['num'], G['('] , contains_epsilon=False),
-            G['F']: ContainerSet(G['num'], G['('] , contains_epsilon=False),
-            G['A']: ContainerSet(G['num'], G['('] , contains_epsilon=False),
-            G['X']: ContainerSet(G['-'], G['+'] , contains_epsilon=True),
-            G['Y']: ContainerSet(G['/'], G['*'] , contains_epsilon=True),
-            G['Z']: ContainerSet(G['^'] , contains_epsilon=True),
-            Sentence(G['T'], G['X']): ContainerSet(G['num'], G['('] , contains_epsilon=False),
-            Sentence(G['+'], G['T'], G['X']): ContainerSet(G['+'] , contains_epsilon=False),
-            Sentence(G['-'], G['T'], G['X']): ContainerSet(G['-'] , contains_epsilon=False),
-            G.Epsilon: ContainerSet( contains_epsilon=True),
-            Sentence(G['F'], G['Y']): ContainerSet(G['num'], G['('] , contains_epsilon=False),
-            Sentence(G['*'], G['F'], G['Y']): ContainerSet(G['*'] , contains_epsilon=False),
-            Sentence(G['/'], G['F'], G['Y']): ContainerSet(G['/'] , contains_epsilon=False),
-            Sentence(G['A'], G['Z']): ContainerSet(G['num'], G['('] , contains_epsilon=False),
-            Sentence(G['^'], G['F']): ContainerSet(G['^'] , contains_epsilon=False),
-            Sentence(G['num']): ContainerSet(G['num'] , contains_epsilon=False),
-            Sentence(G['('], G['E'], G[')']): ContainerSet(G['('] , contains_epsilon=False)
-        }
-
-    @property
-    def follows(self):
-        G = self.G
-        return {
-            G['E']: ContainerSet(G[')'], G.EOF , contains_epsilon=False),
-            G['T']: ContainerSet(G['-'], G[')'], G.EOF, G['+'] , contains_epsilon=False),
-            G['F']: ContainerSet(G['-'], G['*'], G['/'], G[')'], G.EOF, G['+'] , contains_epsilon=False),
-            G['A']: ContainerSet(G['-'], G['*'], G['/'], G['^'], G[')'], G.EOF, G['+'] , contains_epsilon=False),
-            G['X']: ContainerSet(G[')'], G.EOF , contains_epsilon=False),
-            G['Y']: ContainerSet(G['-'], G[')'], G.EOF, G['+'] , contains_epsilon=False),
-            G['Z']: ContainerSet(G['-'], G['*'], G['/'], G[')'], G.EOF, G['+'] , contains_epsilon=False)
-        }
-
 class Regex:
     def __init__(self, G):
         self.G = G
@@ -226,4 +177,94 @@ class Regex:
         follows = self.follows
         M = build_parsing_table(self.G, firsts, follows)
         #Todo:parser = metodo_predictivo_no_recursivo(self.G, M)
-        return None #parser  
+        return None #parser
+    
+      
+class Hulk:
+    
+    @staticmethod
+    def lexer_table():
+        return [
+                ("SQRT_KEYWORD","sqrt"),
+                ("SIN_KEYWORD", "sin"),
+                ("COS_KEYWORD", "cos"),
+                ("EXP_KEYWORD", "exp"),
+                ("LOG_KEYWORD", "log"),
+                ("RAND_KEYWORD","rand"),
+                ("PRINT_KEYWORD","print"),
+                ("PI", "pi"),
+                ("E",  "e"),
+                ("FUNCTION_KEYWORD", "function"),
+                ("LET_KEYWORD",  "let"),
+                ("IN_KEYWORD",   "in"),
+                ("IF_KEYWORD",   "if"),
+                ("ELIF_KEYWORD", "elif"),
+                ("ELSE_KEYWORD", "else"),
+                ("TRUE_KEYWORD", "true"),
+                ("FALSE_KEYWORD","false"),
+                ("WHILE_KEYWORD","while"),
+                ("FOR_KEYWORD",  "for"),
+                ("TYPE_KEYWORD", "type"),
+                ("NEW_KEYWORD",  "new"),
+                ("INHERITS_KEYWORD", "inherits"),
+                ("IS_KEYWORD",  "is"),
+                ("AS_KEYWORD",  "as"),
+                ("PROTOCOL_KEYWORD", "protocol"),
+                ("EXTENDS_KEYWORD",  "extends"),
+                ("IDENTIFIER",  "[a-zA-Z_][a-zA-Z0-9_]*"),
+                ("NUMBER_LITERAL", "[0-9]+(\.[0-9]+)?"),
+                ("BOOLEAN_LITERAL", "true|false"),
+                ("STRING_LITERAL",'"([^"\\\]|\\\.ε)*" | \'([^\'\\\]|\\\.ε)*\''),
+                ("PLUS",  "\+"),
+                ("MINUS",  "\-"),
+                ("MULTIPLY", "\*"),
+                ("PERCENT", "%"),
+                ("DIVIDE",  "/"),
+                ("POWER",  "\^"),
+                ("LESS_THAN", "<"),
+                ("GREATER_THAN", ">"),
+                ("LESS_EQUAL",  "<="),
+                ("GREATER_EQUAL", ">="),
+                ("EQUAL",  "=="),
+                ("NOT_EQUAL", "!="),
+                ("AND_OP",  "&"),
+                ("OR_OP",  "\|"),
+                ("NOT_OP",  "!"),
+                ("PAREN_OPEN",  "\("),
+                ("PAREN_CLOSE",  "\)"),
+                ("BRACE_OPEN",  "\{"),
+                ("BRACE_CLOSE",  "\}"),
+                ("SQUARE_BRACKET_OPEN", "\["),
+                ("SQUARE_BRACKET_CLOSE", "\]"),
+                ("COMMA",  ","),
+                ("SEMICOLON", ";"),
+                ("AT_SYMBOL", "@"),
+                ("AT_AT_SYMBOL", "@@"),
+                ("ARROW", "=>"),
+                ("ASSIGN", "="),
+                ("DASSIGN", ":="),
+                ("COLON", ":"),
+                ("DOT", "\."),
+                ("DOUBLE_PIPE", "\|\|"),
+                ]
+        
+        
+        
+
+
+# tokens = {
+    
+#     'LITERAL' : '"([^\\\\"]*(\\\\[^])*)*"',
+#     'MODULE' : '%',
+#     'POWER' : '\^|\*\*',
+#     'IGNORE' : '(\ |' + line_jump + ')',
+#     'COMMENT' : '#[^ + ' + line_jump + ']*' + line_jump
+#     }
+
+# reserved_words = {
+#         'EXTENDS' : 'extends',
+#         'BOOLEAN_TYPE' : 'Boolean',
+#         'STRING_TYPE' : 'String',
+#         'NUMBER_TYPE' : 'Number',
+#         'PREDEFINED_TYPE' : 'Boolean|Object|String|Number',
+#     }
