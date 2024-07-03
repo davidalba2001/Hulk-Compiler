@@ -101,7 +101,7 @@ class LR1Parser(ShiftReduceParser):
             return pickle.load(file) 
          
     def load_or_build(self,path):
-        path =  self.name_Grammar + '_lr1.pkl' 
+        path +=  self.name_Grammar + '_lr1.pkl' 
         def decorator(build_method):
             def wrapper(self,*args, **kwargs):
                 if os.path.exists(path):
