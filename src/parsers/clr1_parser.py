@@ -107,45 +107,6 @@ def build_LR1_automaton(G):
     automaton.set_formatter(multiline_formatter)
     return automaton
 
-# def build_LR1_automaton(G):
-#     assert len(G.startSymbol.productions) == 1, 'Grammar must be augmented'                                 # !ERROR!
-
-#     firsts = compute_firsts(G)
-#     firsts[G.EOF] = ContainerSet(G.EOF)
-
-#     start_production = G.startSymbol.productions[0]
-#     start_item = Item(start_production, 0, lookaheads=(G.EOF,))
-#     start = frozenset([start_item])
-
-#     closure = closure_lr1(start, firsts)
-#     automaton = State(frozenset(closure), True)
-
-#     pending = [start]
-#     visited = {start: automaton}
-
-#     while pending:
-#         current = pending.pop()
-#         current_state = visited[current]
-
-#         for symbol in G.terminals + G.nonTerminals:
-#             items = current_state.state
-#             kernel = goto_lr1(items, symbol, just_kernel=True)
-
-#             if not kernel:
-#                 continue
-#             try:
-#                 next_state = visited[kernel]
-#             except:
-#                 closure = goto_lr1(items, symbol, firsts)
-#                 next_state = visited[kernel] = State(frozenset(closure), True)
-#                 pending.append(kernel)
-
-#             current_state.add_transition(symbol.Name, next_state)
-
-#     automaton.set_formatter(multiline_formatter)
-#     return automaton
-
-
 
 class LR1Parser(ShiftReduceParser):
     def _build_parsing_table(self):
