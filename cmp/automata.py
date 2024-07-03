@@ -1,5 +1,6 @@
 try:
     import pydot
+    import string
     from cmp.utils import ContainerSet,DisjointSet
 except:
     pass
@@ -214,7 +215,7 @@ class NFA:
         self.finals = set(finals)
         self.map = transitions
         self.vocabulary = set()
-        self.transitions = { state: {} for state in range(states) }
+        self.transitions = {start+state: {} for state in range(states) }
         
         for (origin, symbol), destinations in transitions.items():
             assert hasattr(destinations, '__iter__'), 'Invalid collection of states'
@@ -290,7 +291,7 @@ def epsilon_closure(automaton, states):
     
     while pending:
         state = pending.pop()
-        if ('' in automaton.transitions[state]):
+        if ((state,'') in automaton.map):
             for x in automaton.transitions[state]['']:
                 closure.add(x)
                 pending.append(x)
@@ -366,7 +367,7 @@ def automata_concatenation(a1, a2):
     start = 0
     d1 = 0
     d2 = a1.states + d1
-    final = a2.states + d2
+    final = a2.states + d2 + 1
     
     for (origin, symbol), destinations in a1.map.items():
         transitions[(origin + d1 ,symbol)] = [dest + d1 for dest in destinations]
@@ -378,30 +379,263 @@ def automata_concatenation(a1, a2):
         transitions[(state + d1 ,'')] = [a2.start + d2]
     
     for state in a2.finals:
-        transitions[(state + d2 , '')] = [final]
+        if (state, '') in a2.map:
+            finals = [final + d2 for final in a2.map[state, '']]
+            transitions[(state + d2, '')] = finals + [final]
+        else:
+            transitions[(state + d2, '')] = [final]
                
     states = a1.states + a2.states + 1
+    finals = { final }
+    nfa  = NFA(states, finals, transitions, start)
+    dfa = nfa_to_dfa(nfa)
+    return dfa
+
+def automata_closure(a1:NFA):
+    transitions = {}
+    
+    start = 0
+    s1 = 1
+    final = a1.states + 1
+    # renombrando los states
+    for (origin, symbol), destinations in a1.map.items():
+        transitions[(origin+1,symbol)] = [dest+1 for dest in destinations]
+    # andiendo start 
+    transitions[(start,'')] = [s1,final]
+    
+    for state in a1.finals:
+        transitions[(state + 1,'')] = [s1,final]
+            
+    state = a1.states +  2
+    finals = {final}
+    
+    return NFA(state, finals, transitions, start)
+
+def automata_plus(a1):
+    # Implementación del operador + (uno o más)
+    transitions = {}
+    start = 0
+    s1 = 1
+    final = a1.states + 1
+    
+    for (origin, symbol), destinations in a1.map.items():
+        transitions[(origin+1,symbol)] = [dest+1 for dest in destinations]
+    
+    transitions[(start,'')] = [s1]
+    
+    for state in a1.finals:
+        transitions[(state + 1,'')] = [s1,final]
+            
+    states = a1.states + 2
     finals = { final }
     
     return NFA(states, finals, transitions, start)
 
-def automata_closure(a1):
+def automata_question(a1):
+    # Implementación del operador ? (cero o uno)
     transitions = {}
     
     start = 0
-    d1 = 1
-    final = a1.states + d1
+    s1 = 1
+    final = a1.states + 1
     
     for (origin, symbol), destinations in a1.map.items():
-        transitions[(origin+d1,symbol)] = [dest+d1 for dest in destinations]
+        transitions[(origin+ 1,symbol)] = [dest+ 1 for dest in destinations]
     
-    transitions[(start,'')] = [d1,final]
+    transitions[(start,'')] = [s1,final]
     
     for state in a1.finals:
-        transitions[(state + d1,'')] = [d1,final]
+        transitions[(state + 1,'')] = [final]
             
-    states = a1.states +  2
+    states = a1.states + 2
     finals = { final }
+    
+    return NFA(states, finals, transitions, start)
+
+def automata_symbol(symbol):
+    return NFA(states = 2,finals = [1],transitions={(0,symbol):[1]})
+
+def automata_quantifier(a1, min_val, max_val):
+    if not isinstance(min_val,int) or not isinstance(max_val,int):
+        raise ValueError(f"min_val and max_val must be integers, but got {type(min_val).__name__} and {type(max_val).__name__}")
+    
+    if min_val < 0:
+        raise ValueError("min_val must be greater than or equal to 0")
+    
+    if min_val > max_val:
+        raise ValueError("min_val must be less than or equal to max_val")
+
+    automaton = _quantifier_builder(a1, min_val, max_val)
+    
+    return automaton
+
+def shift_automata(a1:NFA,shift):
+    transitions = {}
+    start = a1.start + shift
+    states = a1.states
+    
+    for (origin, symbol), destinations in a1.map.items():
+        transitions[(origin + shift,symbol)] = [dest + shift for dest in destinations]
+    
+    finals = {final + shift for final in a1.finals}
+    return NFA(states,finals,transitions, start)
+
+def _transform_transitions(transitions):
+
+    new_transitions = {}
+
+    for state, symbols in transitions.items():
+        for symbol, states in symbols.items():
+            new_transitions[(state, symbol)] = states
+    
+    return new_transitions
+
+def _update_transitions(trans0,trans1):
+    trans_update = trans0
+    trans_dict = trans1
+    key = value = None
+    try:
+        key,value = list(trans0.items())[0]
+        if isinstance(key, int) and isinstance(value, dict):
+            trans_update = _transform_transitions(trans_update)
+    except:   
+        pass
+
+    try: 
+        key,value = list(trans1.items())[0]
+        if isinstance(key, int) and isinstance(value, dict):
+            trans_dict =  _transform_transitions(trans_dict)
+    except:  
+        pass
+            
+    for (key,states) in trans_dict.items():
+            if(key in trans_update.keys()):
+                update = trans_update[key]
+                trans_update[key] = list(set(update).union(states))
+            else:
+                 trans_update[key] = states
+    
+    return trans_update
+
+def _quantifier_builder(a1:NFA,min,max):
+    states = a1.states * max + max
+    start = a1.start
+    transitions = {}
+    shift = a1.states + 1
+    
+    automaton:list[NFA] = [a1]
+    for i in range(max-1):
+        current_aut = automaton[i]
+        automaton.append(shift_automata(current_aut,shift))
+        
+    inner = [state.start - 1 for state in automaton[1:]]
+    inner.append(inner[-1:][0] + a1.states+1)
+    index = 0
+    
+    for autom in automaton:
+        for final in autom.finals:
+            transitions[(final,'')] = [inner[index]]
+        index += 1
+    index = 0
+        
+    for autom in automaton[1:]:
+        transitions[(inner[index],'')] = [autom.start]
+        index += 1
+        
+    update_transitions = {} 
+    for automt in automaton:
+        update_transitions = _update_transitions(automt.transitions,update_transitions)
+    
+    transitions = _update_transitions(transitions,update_transitions)
+    
+    if(min > 0):
+        finals = {final for final in inner[min-1:]}
+    else:
+        min = 1
+        finals = {final for final in inner[min-1:]}
+        finals.add(start)
+        
+    return NFA(states,finals,transitions, start)
+         
+def automata_range(characters,ranges,flag = False):
+    all_chars = []
+    for start,end in ranges:
+        all_chars += _get_chars_in_range(start, end)
+
+    all_chars = set(all_chars)
+    all_chars = all_chars.union(characters)
+    
+    if(flag):
+        all_chars =  set(string.printable).difference(all_chars)
+    
+    transitions = {}
+    start_state = 0
+    final_state = 1
+
+    for symbol in all_chars:
+        transitions[(start_state,symbol)] = [final_state]
+
+    states = 2
+    finals = {final_state}
+
+    return NFA(states, finals, transitions, start_state)
+        
+def _get_chars_in_range(start, end):
+    
+    if isinstance(start, str) and isinstance(end, str):
+        if len(start) != 1 or len(end) != 1:
+            raise ValueError("start and end must be single characters")
+        if ord(start) > ord(end):
+            raise ValueError("start must be less than or equal to end")
+        start_ord = ord(start)
+        end_ord = ord(end)
+        is_char = True
+    elif isinstance(start, int) and isinstance(end, int):
+        if start > end:
+            raise ValueError("start must be less than or equal to end")
+        start_ord = start
+        end_ord = end
+        is_char = False
+    else:
+        raise ValueError("start and end must be both single characters or both integers")
+    
+    return  [chr(symbol) if is_char else str(symbol) for symbol in range(start_ord, end_ord + 1)]
+
+def combined_automaton():
+    printable_chars = set(string.printable).difference('\n')
+
+    char_automata = [automata_symbol(char) for char in printable_chars]
+
+    combined_automaton = char_automata[0]
+    for automaton in char_automata[1:]:
+        combined_automaton = automata_union(combined_automaton, automaton)
+    return combined_automaton
+
+def automata_dot(start_automaton, end_automaton):
+    
+    combined = combined_automaton()
+    intermediate_automaton = automata_concatenation(start_automaton, combined)
+    final_automaton = automata_concatenation(intermediate_automaton, end_automaton)
+    return final_automaton
+   
+def automata_start_anchor(a1):
+    clousre = automata_closure(combined_automaton())
+    automaton = automata_concatenation(a1,clousre)
+    return automaton
+
+def automata_end_anchor(a1):
+    transitions = {}
+    
+    start = 0
+    
+    for (origin, symbol), destinations in a1.map.items():
+        transitions[(origin, symbol)] = [dest  for dest in destinations]
+    
+    for state in a1.finals:
+        transitions[(state,'')] = [start]
+    
+    states = a1.states
+    finals = a1.finals
     
     return NFA(states, finals, transitions, start)
 
