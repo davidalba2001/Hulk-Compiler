@@ -1,42 +1,75 @@
 try:
     from cmp.pycompiler import Grammar
-    from cmp.utils import ContainerSet
+    from cmp.utils import ContainerSet,Token
     from cmp.exceptions import LL1GrammarException
+    import dill as pickle 
+    import os
     print("Imports successful")
 except ImportError as e:
     print(f"ImportError: {e}")
+
+
+
 
 class ShiftReduceParser:
     SHIFT = "SHIFT"
     REDUCE = "REDUCE"
     OK = "OK"
-
-    def __init__(self, G, verbose=False):
+    path_serialized ='src/parsers/serialized'
+    def __init__(self,G,name_Grammar,verbose=False):
         self.G = G
         self.verbose = verbose
-        self.action = {}
+        self.action = {} 
         self.goto = {}
-        self._build_parsing_table()
+        path_action = self.path_serialized + name_Grammar + '_action'
+        path_goto = self.path_serialized + name_Grammar + '_goto'
+        if(os.path.exists(path_action) and os.path.exists(path_goto)):
+            self.action = self.deserialize_object(path_action)  
+            self.goto = self.deserialize_object(path_goto)
+        else:
+            self._build_parsing_table()
+            self.serialize_object(self.action,path_action)
+            self.serialize_object(self.action,path_goto)
+        
+    def serialize_object(obj, filename):
+        with open(filename, 'wb') as file:
+            pickle.dump(obj, file)
+            
+    def deserialize_object(filename):
+        with open(filename, 'rb') as file:
+            return pickle.load(file)  
 
     def _build_parsing_table(self):
         raise NotImplementedError()
 
-    def __call__(self, w):
+    def __call__(self,w,get_shift_reduce= True):
         stack = [0]
         cursor = 0
         output = []
         operations = []
-        
+        isTokenList = isinstance(w, list) and all(isinstance(token, Token) for token in w)
         while True:
+            
             state = stack[-1]
-            lookahead = w[cursor]
+            if isTokenList:
+                lookahead_token:Token = w[cursor]
+                lookahead = lookahead_token.token_type
+            else:    
+                lookahead = w[cursor]
             if self.verbose:
                 print(stack, "<---||--->", w[cursor:])
 
-            # Your code here!!! (Detect error)
-            if (state, lookahead) not in self.action:
-                raise SyntaxError(f"Unexpected symbol: {lookahead}")
-
+            
+            if isTokenList:
+                if (state, lookahead) not in self.action:
+                    raise SyntaxError(
+                        f"Unexpected symbol: {lookahead} at (line {lookahead_token.line}, column {lookahead_token.column})"
+                    )
+            else:
+                if (state, lookahead) not in self.action:
+                    raise SyntaxError(f"Unexpected symbol: {lookahead}")
+                
+                
             action, tag = self.action[state, lookahead]
             # Your code here!!! (Shift case)
             if action == self.SHIFT:
@@ -55,12 +88,14 @@ class ShiftReduceParser:
 
             # Your code here!!! (OK case)
             elif action == self.OK:
-                return output,operations
+                if get_shift_reduce:
+                    return output,operations
+                else:
+                    return output
 
             # Your code here!!! (Invalid case)
             else:
                 raise SyntaxError(f"Invalid action: {action}")
-
 
 def compute_local_first(firsts, alpha):
     first_alpha = ContainerSet()
@@ -83,7 +118,6 @@ def compute_local_first(firsts, alpha):
                 first_alpha.hard_update(firsts[symbol])
 
     return first_alpha
-
 
 def compute_firsts(G: Grammar):
     firsts = {}
@@ -115,7 +149,6 @@ def compute_firsts(G: Grammar):
             change |= first_X.hard_update(local_first)
 
     return firsts
-
 
 def compute_follows(G, firsts):
     follows = {}
@@ -150,7 +183,6 @@ def compute_follows(G, firsts):
             if alpha and alpha[-1].IsNonTerminal:
                 change |= follows[alpha[-1]].update(follow_X)
     return follows
-
 
 def build_parsing_table(G, firsts, follows):
     # init parsing table

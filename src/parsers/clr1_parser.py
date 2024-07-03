@@ -105,6 +105,7 @@ def build_LR1_automaton(G):
     automaton.set_formatter(multiline_formatter)
     return automaton
 
+
 class LR1Parser(ShiftReduceParser):
     def _build_parsing_table(self):
         G = self.G.AugmentedGrammar(True)
