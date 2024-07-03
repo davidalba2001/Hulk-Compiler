@@ -8,7 +8,7 @@ class TypeCollectorVisitor():
     def __init__(self,context:Context, scope: Scope, errors) -> None:
         self.context: Context = context
         self.scope: Scope = scope
-        self.errors: List[str] = errors
+        self.errors: List[SemanticError] = errors
         self.currentType: Type = None
 
     @visitor.on('node')
@@ -27,25 +27,24 @@ class TypeCollectorVisitor():
             
     @visitor.when(TypeNode)
     def visit(self, node: TypeNode):
-        if node.identifier not in self.context.functions:
-            try:
-                self.context.create_type(node.identifier)
-            except:
-                self.errors.append(SemanticError(f'El nombre de tipo {node.identifier} ya ha sido tomado'))
-        else: self.errors.append(f"El nombre {node.identifier} ya esta en uso")
-    
+        try:
+            self.context.create_type(node.identifier)
+        except SemanticError as e:
+            error_with_line = SemanticError(f"Error at line {node.line}: {str(e)}")
+            self.errors.append(error_with_line)
+        
     @visitor.when(FuncNode)
     def visit(self, node: FuncNode):
-        if not(node.identifier in self.context.functions or node.identifier in self.context.types or node.identifier in self.context.protocols):
-            self.context.functions[node.identifier] = []
+        try:
+            self.context.register_function_name(node.identifier)
+        except SemanticError as e:
+            error_with_line = SemanticError(f"Error at line {node.line}: {str(e)}")
+            self.errors.append(error_with_line)
             
     @visitor.when(ProtocolNode)
     def visit(self, node: ProtocolNode):
         try:
             self.context.create_protocol(node.identifier)
-        except:
-            self.errors.append(SemanticError(f'El nombre de protocolo {node.identifier} ya ha sido tomado'))
-
-
-
-
+        except SemanticError as e:
+            error_with_line = SemanticError(f"Error at line {node.line}: {str(e)}")
+            self.errors.append(error_with_line)

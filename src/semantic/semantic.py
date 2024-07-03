@@ -42,7 +42,6 @@ class Protocol:
             raise SemanticError(f'Parent protocol is already set for {self.name}.')
         self.parent = parent
 
-
 class Attribute:
     def __init__(self, name, typex):
         self.name = name
@@ -211,54 +210,57 @@ class IntType(Type):
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, IntType)
 
-class DynamicType(Type):
+class VarType(Type):
     def __init__(self):
         super().__init__(self, 'var')
     
     def bypass(self):
         return True
 
+
 class Context:
     def __init__(self):
         self.types: dict[str, Type] = {}
-        self.functions: dict[str, list[Method]]= {}
-        self.protocols = {}
-    def create_type(self, name:str):
+        self.functions: dict[str, list[Method]] = {}
+        self.protocols: dict[str, Protocol] = {}
+        
+    def create_type(self, name: str) -> Type:
         if name in self.types:
-            raise SemanticError(f'Type with the same name ({name}) already in context.')
-        typex = self.types[name] = Type(name)
+            raise SemanticError(f'The type name "{name}" has already been taken.')
+        typex = Type(name)
+        self.types[name] = typex
         return typex
     
-    def create_funct(self, name:str):
-        if name in self.types:
-            raise SemanticError(f'Type with the same name ({name}) already in context.')
-        typex = self.func[name] = Type(name)
-        return typex
-
-    def get_type(self, name:str):
-        try:
-            return self.types[name]
-        except KeyError:
-            raise SemanticError(f'Type "{name}" is not defined.')
-        
-    def get_protocol(self, name:str):
-        try:
-            return self.protocols[name]
-        except KeyError:
-            raise SemanticError(f'Protocol "{name}" is not defined.')
-        
-    def create_protocol(self, name: str):
-        if name in self.types or name in self.protocols or name in self.functions :
-            raise SemanticError(f'Protocol with the same name ({name}) already in context.')
-        protocol = self.protocols[name] = Type(name)
+    def register_function_name(self, name: str) -> list[Method]:
+        """Register function name only, not its overloads"""
+        if name in self.functions:
+            raise SemanticError(f'The function name "{name}" has already been taken.')
+        self.functions[name] = []
+        return self.functions[name]
+    
+    def create_protocol(self, name: str) -> Protocol:
+        if name in self.types or name in self.protocols or name in self.functions:
+            raise SemanticError(f'The protocol name "{name}" has already been taken.')
+        protocol = Protocol(name)
+        self.protocols[name] = protocol
         return protocol
-
-
-    def __str__(self):
-        return '{\n\t' + '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n')) + '\n}'
-
-    def __repr__(self):
+    
+    def get_type(self, name: str) -> Type:
+        if name not in self.types:
+            raise SemanticError(f'The type "{name}" is not defined in the context.')
+        return self.types[name]
+    
+    def get_protocol(self, name: str) -> Protocol:
+        if name not in self.protocols:
+            raise SemanticError(f'The protocol "{name}" is not defined in the context.')
+        return self.protocols[name]
+    
+    def __str__(self) -> str:
+        types_str = '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n'))
+        return f'{{\n\t{types_str}\n}}'
+    def __repr__(self) -> str:
         return str(self)
+    
 
 class VariableInfo:
     def __init__(self, name, vtype):
