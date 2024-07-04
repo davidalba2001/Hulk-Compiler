@@ -28,7 +28,7 @@ method_decl, method_inline, method_full, method_call, method_signature = Hulk_G.
 type_annotation,optional_type_annotation = Hulk_G.NonTerminals('TYPE_ANNOTATION OPTIONAL_TYPE_ANNOTATION')
 annotation_params,annotation_param = Hulk_G.NonTerminals('ANNOTATION_PARAMS ANNOTATION_PARAM')
 protocol_decl,protocol_body,extends_clause  = Hulk_G.NonTerminals('PROTOCOL_DECL PROTOCOL_BODY EXTENDS_CLAUSE')
-
+is_expression,as_expression = Hulk_G.NonTerminals('IS_EXPRESSION','AS_EXPRESSION')
 statement_block,expression_statement = Hulk_G.NonTerminals('STATEMENT_BLOCK EXPRESSION_STATEMENT')
 vector_inst, vector_explicit, vector_implicit, vector_indexing = Hulk_G.NonTerminals('VECTOR_INST VECTOR_EXPLICIT VECTOR_IMPLICIT VECTOR_INDEXING')
 # TERMINALS (TERMINALES)
@@ -77,9 +77,10 @@ expression %= string_expr ,lambda h,s: s[1]
 expression %= method_call ,lambda h,s: s[1]
 expression %= type_inst ,lambda h,s: s[1]
 expression %= vector_indexing ,lambda h,s: s[1]
-expression %= expression + as_keyword + identifier ,lambda h,s: AsNode(s[1],s[3],s[2,line])
+expression %= as_expression ,lambda h,s: s[1]
 expression %= identifier , lambda h, s: IdNode(s[1],s[1,line])
 
+as_expression = expression + as_keyword + identifier ,lambda h,s: AsNode(s[1],s[3],s[2,line])
 # Expression Block
 expression_block %= brace_open + statement_block + brace_close ,lambda h,s: BlockNode(s[2])
 
@@ -170,12 +171,13 @@ boolean_expr %= boolean_term ,lambda h,s: s[1]
 boolean_term %= boolean_term + and_op + boolean_factor ,lambda h,s: AndNode(s[1],s[3],s[2,line])
 boolean_term %= boolean_factor,lambda h,s: s[1]
 
-boolean_factor %= expression + is_keyword + identifier ,lambda h,s: IsNode(s[1],s[3],s[2,line])
+boolean_factor %= is_expression ,lambda h,s: s[1]
 boolean_factor %= not_op + boolean_factor ,lambda h,s: NotNode(s[2],s[1,line])
 boolean_factor %= paren_open + boolean_expr + paren_close,lambda h,s: s[2]
 boolean_factor %= relational_expr ,lambda h,s: s[1]
 boolean_factor %= true_keyword   ,lambda h,s: BooleanNode(s[1],s[1,line])
 boolean_factor %= false_keyword ,lambda h,s: BooleanNode(s[1],s[1,line])
+is_expression %= expression + is_keyword + identifier ,lambda h,s: IsNode(s[1],s[3],s[2,line])
 
 relational_expr %= relational_expr + less_than + relatable_term ,lambda h,s: LessThanNode(s[1],s[3],s[2,line])
 relational_expr %= relational_expr + greater_than + relatable_term ,lambda h,s: GreaterThanNode(s[1],s[3],s[2,line])
@@ -208,10 +210,13 @@ for_loop %= for_keyword + paren_open + identifier + in_keyword + expression + pa
 string_expr %= concat_string,lambda h,s : s[1]
 string_expr %= concat_space_string,lambda h,s : s[1]
 string_expr %= string_literal,lambda h,s : StringNode(s[1],s[1,line])
+ 
 
-
-concat_string %= expression + at_symbol + expression ,lambda h,s : StringConcatNode(s[1],s[3],s[2,line])
-concat_space_string %= expression + at_at_symbol + expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
+concat_string %= concat_string + at_symbol + expression ,lambda h,s : StringConcatNode(s[1],s[3],s[2,line])
+concat_string % string_expr,lambda h,s : s[1]
+ 
+concat_space_string %= concat_space_string + at_at_symbol + expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
+concat_space_string %= string_expr, lambda h,s : s[1]
 # Type Statement
 type_decl %= type_keyword + identifier + optional_parentized_param_list + inherits_clause + brace_open + type_body + brace_close, lambda h,s: TypeNode(s[2],s[3],s[4],s[6],s[1,line])
 

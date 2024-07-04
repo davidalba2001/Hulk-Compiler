@@ -53,9 +53,9 @@ class Method:
 class Type:
     def __init__(self, name:str):
         self.name = name
-        self.arguments: Argument = []
-        self.attributes:Attribute = []
-        self.methods: Method = []
+        self.arguments: list[Argument] = []
+        self.attributes: list[Attribute] = []
+        self.methods:list[(str,int),Method] = []
         self.parent: Type = None
         self.arguments_parent = None
 
@@ -80,8 +80,8 @@ class Type:
             self.arguments[name] = typex
         else: 
             raise SemanticError(f'Argument "{name}" is already defined in {self.name}.')
-        
-
+       
+       
     def define_attribute(self, name:str, typex):
         try:
             self.get_attribute(name)
@@ -92,16 +92,17 @@ class Type:
         else:
             raise SemanticError(f'Attribute "{name}" is already defined in {self.name}.')
 
-    def get_method(self, name:str):
+    def get_method(self, name: str, nparams: int):
         try:
-            return next(method for method in self.methods if method.name == name)
-        except StopIteration:
+            return self.methods[name, nparams]
+        except KeyError:
             if self.parent is None:
-                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
+                raise SemanticError(f'Method "{name}" with {nparams} parameters is not defined in {self.name}.')
             try:
-                return self.parent.get_method(name)
+                return self.parent.get_method(name, nparams)
             except SemanticError:
-                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
+                raise SemanticError(f'Method "{name}" with {nparams} parameters is not defined in {self.name} or its parents.')
+    
 
     def define_method(self, name:str, param_names:list, param_types:list, return_type):
         methods = [len(method.param_names) for method in self.methos if name == method.name]
@@ -150,7 +151,7 @@ class Protocol:
     def __init__(self, name: str):
         self.name = name
         self.methods: dict[(str,int), Method] = {}
-        self.parent = None
+        self.parent:Protocol = None
     
     def get_method(self, name: str, nparams: int):
         try:
@@ -177,11 +178,32 @@ class Protocol:
             raise SemanticError(f'Parent protocol is already set for {self.name}.')
         self.parent = parent
         
+    def get_all_methods(self):
+        if self.parent:
+            methods = self.methods.copy()
+            return methods.update(self.parent.get_all_methods())
+        else:
+            return self.methods.copy()
     
-    def implemented_by(self, other: Type):
-        for met in self.methods:
-            if not (self.methods[met] in other.methods or other.bypass()): return False
+    
+    def implemented_by(self,other: Type):
+        
+        if(other.bypass()):
+            return other.bypass()
+        
+        pmethods = [method for method in self.get_all_methods()]
+        
+        for pname,signature in pmethods:
+            try:
+                other.get_method(pname,signature)
+            except:
+                return False
+            
+        
+
         return True
+        
+    
 
 class ErrorType(Type):
     def __init__(self):
