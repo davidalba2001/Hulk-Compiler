@@ -19,6 +19,7 @@ try:
     from cmp.parsing import ShiftReduceParser
     from cmp.automata import State, multiline_formatter
     import dill as pickle
+    from functools import wraps
 
     print("Imports successful")
 except ImportError as e:
@@ -83,32 +84,40 @@ def goto_lr1(items, symbol, firsts=None, just_kernel=False):
 path_serialized = "src/parsers/serialized/"
 
 
+
 def load_or_build1(path_serialized):
     def decorator(build_method):
+        @wraps(build_method)
         def wrapper(self, *args, **kwargs):
             path = path_serialized + self.name_Grammar + "_lr1.pkl"
             if os.path.exists(path):
-                with open(path, "rb") as file:
-                    obj = pickle.load(file)
+                obj = deserialize_object(path)
             else:
                 obj = build_method(self, *args, **kwargs)
-                with open(path, "wb") as file:
-                    pickle.dump(obj, file)
+                serialize_object(obj, path)
             return obj
 
         return wrapper
 
     return decorator
 
-
 def serialize_object(obj, filename):
-    with open(filename, "wb") as file:
-        pickle.dump(obj, file)
-
+    original_limit = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(10000)
+        with open(filename, "wb") as file:
+            pickle.dump(obj, file)
+    finally:
+        sys.setrecursionlimit(original_limit)
 
 def deserialize_object(filename):
-    with open(filename, "rb") as file:
-        return pickle.load(file)
+    original_limit = sys.getrecursionlimit()
+    try:
+        sys.setrecursionlimit(10000)
+        with open(filename, "rb") as file:
+            return pickle.load(file)
+    finally:
+        sys.setrecursionlimit(original_limit)
 
 
 class LR1Parser(ShiftReduceParser):
