@@ -56,9 +56,12 @@ protocol_keyword, extends_keyword = Hulk_G.Terminals('PROTOCOL_KEYWORD EXTENDS_K
 line = 'line'
 ###############################################################################################################################
 program %= statements + main_expression ,lambda h,s: ProgramNode(s[1],s[2])
+program %= statements ,lambda h,s: ProgramNode(s[1],None)
+program %= main_expression,lambda h,s: ProgramNode(None,s[1])
+
 
 statements %= statements  + statement ,lambda h,s : list(map(lambda t: t[0] + t[1], zip(s[1],s[2])))
-statements %= Hulk_G.Epsilon, lambda h, s: h[0]
+statements %= statement, lambda h, s: s[1]
  
 statement  %= type_decl, lambda h, s : ([s[1]],[],[]) 
 statement  %= function_decl, lambda h, s:([],[s[1]],[])
@@ -117,7 +120,7 @@ constant %= pi ,lambda h,s: ConstantNode(s[1],s[1,line])
 let_expr %= let_keyword + binding_list + in_keyword + let_body ,lambda h,s: LetNode(s[2],s[4],s[1,line])
 
 binding_list %= binding_list + comma + binding ,lambda h,s: [s[1]] + s[3]
-binding_list %= Hulk_G.Epsilon,lambda h,s: h[0]
+binding_list %= binding ,lambda h,s: s[1]
 binding %= assignment ,lambda h,s: s[1]
 binding %= dassignment ,lambda h,s: s[1]
 
