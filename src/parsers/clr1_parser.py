@@ -84,7 +84,6 @@ def goto_lr1(items, symbol, firsts=None, just_kernel=False):
 path_serialized = "src/parsers/serialized/"
 
 
-
 def load_or_build1(path_serialized):
     def decorator(build_method):
         @wraps(build_method)
@@ -101,6 +100,7 @@ def load_or_build1(path_serialized):
 
     return decorator
 
+
 def serialize_object(obj, filename):
     original_limit = sys.getrecursionlimit()
     try:
@@ -109,6 +109,7 @@ def serialize_object(obj, filename):
             pickle.dump(obj, file)
     finally:
         sys.setrecursionlimit(original_limit)
+
 
 def deserialize_object(filename):
     original_limit = sys.getrecursionlimit()
@@ -140,7 +141,7 @@ class LR1Parser(ShiftReduceParser):
             serialize_object(self.action, path_goto)
 
     @load_or_build1(path_serialized)
-    def build_LR1_automaton(self,G):
+    def build_LR1_automaton(self, G):
         assert len(G.startSymbol.productions) == 1, "Grammar must be augmented"
 
         firsts = compute_firsts(G)

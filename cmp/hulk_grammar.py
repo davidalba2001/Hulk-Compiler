@@ -190,18 +190,18 @@ relatable_term %= expression ,lambda h,s: s[1]
 # Conditional Expression
 conditional_expr %= if_clause + elif_clauses + else_clause ,lambda h,s: IfNode(s[1][0],s[1][1],s[2],s[3],s[1][2])
     
-if_clause %= if_keyword + paren_open + boolean_expr + paren_close + expression,lambda h,s:(s[3],s[5],s[1,line])
+if_clause %= if_keyword + paren_open + expression + paren_close + expression,lambda h,s:(s[3],s[5],s[1,line])
 
 elif_clauses %= elif_clauses + elif_clause,lambda h,s: [s[1]] + s[2]
 elif_clauses %= Hulk_G.Epsilon ,lambda h,s: h[0]
 
-elif_clause %= elif_keyword + paren_open + boolean_expr + paren_close + expression ,lambda h,s: ElifNode(s[3],s[5],s[1,line])
+elif_clause %= elif_keyword + paren_open + expression + paren_close + expression ,lambda h,s: ElifNode(s[3],s[5],s[1,line])
 
 else_clause %= else_keyword + expression , lambda h,s: ElseNode(s[2],s[1,line])
 else_clause %= Hulk_G.Epsilon ,lambda h,s: h[0]
 
 # Loop Expression
-while_loop %= while_keyword + paren_open + boolean_expr + paren_close + expression ,lambda h,s: WhileNode(s[3],s[5],s[1,line])
+while_loop %= while_keyword + paren_open + expression + paren_close + expression ,lambda h,s: WhileNode(s[3],s[5],s[1,line])
 for_loop %= for_keyword + paren_open + identifier + in_keyword + expression + paren_close + expression ,lambda h,s: ForNode(s[3],s[5],s[7],s[1,line])
 
 # String Expression
@@ -211,7 +211,7 @@ string_expr %= string_literal,lambda h,s : StringNode(s[1],s[1,line])
 
 
 concat_string %= expression + at_symbol + expression ,lambda h,s : StringConcatNode(s[1],s[3],s[2,line])
-concat_space_string %= expression + at_symbol + expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
+concat_space_string %= expression + at_at_symbol + expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
 # Type Statement
 type_decl %= type_keyword + identifier + optional_parentized_param_list + inherits_clause + brace_open + type_body + brace_close, lambda h,s: TypeNode(s[2],s[3],s[4],s[6],s[1,line])
 

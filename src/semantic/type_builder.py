@@ -241,10 +241,11 @@ class TypeBuilderVisitor:
             )
             return
         
+        node.identifier
+        node.superProtocol
         
         
-        body = node.body
-        for dec in body:
+        for pname,annotation_params,ptype in node.body:
             try:
                 protocol.define_method(
                     dec[0],
