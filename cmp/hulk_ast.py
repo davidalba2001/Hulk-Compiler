@@ -86,8 +86,8 @@ class LoopNode(ExpressionNode):
         
 class BlockNode(ExpressionNode):
     def __init__(self,expressions):
-        super().__init__(expressions,'BLOCK')
-        
+        super().__init__(ntype='BLOCK')
+        self.expressions = expressions
 class TypeInstanceNode(ExpressionNode):
     def __init__(self, ntype='TYPE_INSTANCE'):
         super().__init__(ntype)

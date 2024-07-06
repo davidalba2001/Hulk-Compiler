@@ -1,11 +1,17 @@
 import itertools as itt
 from collections import OrderedDict
-
+from cmp.hulk_ast import FuncNode
 
 class SemanticError(Exception):
     @property
     def text(self):
         return self.args[0]
+
+class FuncInfo:
+    def __init__(self, params, node: FuncNode):
+        self.params = params
+        self.function = node
+        
 
 class Attribute:
     def __init__(self, name, typex):
@@ -52,7 +58,7 @@ class Type:
         self.arguments: Argument = []
         self.attributes:Attribute = []
         self.methods: Method = []
-        self.parent = None
+        self.parent: Type = None
 
     def set_parent(self, parent):
         if self.parent is not None:
