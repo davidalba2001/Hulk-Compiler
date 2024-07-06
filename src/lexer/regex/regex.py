@@ -28,6 +28,7 @@ tag_symbol = {'QUESTION': '?','DOT': '.','PLUS': '+','PIPE': '|','STAR': '*','MI
         'OPAR': '(','CPAR': ')','OBRCKT': '[','CBRCKT': ']','EPSILON': 'ε','DOLLAR': '$','OBRACE': '{','CBRACE': '}'
                   }
 
+parser_Regex = LR1Parser(G_Regex,'G_Regex')
 
 class Regex:
     def __init__(self, pattern,skip_whitespaces= True):
@@ -35,8 +36,8 @@ class Regex:
         self.automaton:DFA = build_automaton(tokens)
 
 def build_automaton(tokens:list[Token]):
-    parser = LR1Parser(G_Regex,'G_Regex')
-    parse, operations = parser(tokens)
+    
+    parse, operations = parser_Regex(tokens)
     ast = evaluate_reverse_parse(parse, operations, tokens)
     nfa = ast.evaluate()
     dfa = nfa_to_dfa(nfa)

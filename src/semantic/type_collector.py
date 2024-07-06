@@ -24,6 +24,7 @@ class TypeCollectorVisitor():
             self.visit(func)
         for protocol in statements.statements_protocol:
             self.visit(protocol)
+            
     @visitor.when(TypeNode)
     def visit(self, node: TypeNode):
         if node.identifier not in self.context.functions:
@@ -32,6 +33,7 @@ class TypeCollectorVisitor():
             except:
                 self.errors.append(SemanticError(f'El nombre de tipo {node.identifier} ya ha sido tomado'))
         else: self.errors.append(f"El nombre {node.identifier} ya esta en uso")
+    
     @visitor.when(FuncNode)
     def visit(self, node: FuncNode):
         if not(node.identifier in self.context.functions or node.identifier in self.context.types or node.identifier in self.context.protocols):

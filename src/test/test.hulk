@@ -30,7 +30,7 @@ type Employed(firstname,lastname, salary) inherits Person(firstname,lastname)
 
     getdetalles() => self.name @@ "salary:" @@ salary() 
 
-    walk() =>  walk('I can't always run')
+    walk() =>  walk('I can\'t always run')
 }
 
 for (x in range(0,10)) 
