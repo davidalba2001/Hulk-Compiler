@@ -14,37 +14,44 @@ sys.path.append(parsers_path)
 print(f"sys.path: {sys.path}")
 
 try:
-    from ll1_parser import build_non_recursive_predictive_parser
-    from cmp.automata import nfa_to_dfa, automata_minimization
-    from cmp.evaluation import evaluate_parse
+    from clr1_parser import LR1Parser
+    from cmp.automata import nfa_to_dfa, automata_minimization , DFA
+    from cmp.evaluation import evaluate_reverse_parse
     from cmp.utils import Token
+    from cmp.regex_grammar import G_Regex
     print("Imports successful")
 except ImportError as e:
     print(f"ImportError: {e}")
 
 
-class Regex:
-    def __init__(self, pattern : str):
-        tokens = regex_tokenizer(pattern)
-        self.automaton = build_automaton(tokens)
+tag_symbol = {'QUESTION': '?','DOT': '.','PLUS': '+','PIPE': '|','STAR': '*','MINUS': '-','CARET': '^',
+        'OPAR': '(','CPAR': ')','OBRCKT': '[','CBRCKT': ']','EPSILON': 'ε','DOLLAR': '$','OBRACE': '{','CBRACE': '}'
+                  }
 
-def build_automaton(tokens):
-    parser = build_non_recursive_predictive_parser(G)
-    left_parse = parser(tokens)
-    ast = evaluate_parse(left_parse, tokens)
+
+class Regex:
+    def __init__(self, pattern,skip_whitespaces= True):
+        tokens:list[Token] = regex_tokenizer(pattern,G_Regex,skip_whitespaces)
+        self.automaton:DFA = build_automaton(tokens)
+
+def build_automaton(tokens:list[Token]):
+    parser = LR1Parser(G_Regex)
+    parse, operations = parser([token.token_type for token in tokens])
+    ast = evaluate_reverse_parse(parse, operations, tokens)
     nfa = ast.evaluate()
     dfa = nfa_to_dfa(nfa)
-    mini = automata_minimization(dfa)
+    #mini = automata_minimization(dfa)
+    return dfa
 
 def regex_tokenizer(text, G, skip_whitespaces=True):
     tokens = []
-    fixed_tokens = {lex: Token(lex, G[lex]) for lex in '| * ( ) ε'.split() }
+    fixed_tokens = {tag_symbol[str(terminal)]: Token(tag_symbol[str(terminal)], terminal) for terminal in G.terminals if str(terminal) != 'SYMBOL'}
     special_char = False
     for char in text:
         if skip_whitespaces and char.isspace():
             continue
         elif special_char:
-            token = Token(char, G['symbol'])
+            token = Token(char, G['SYMBOL'])
             special_char = False            
         elif char == '\\':
             special_char = True
@@ -53,12 +60,10 @@ def regex_tokenizer(text, G, skip_whitespaces=True):
             try:
                 token = fixed_tokens[char]
             except:
-                token = Token(char, G['symbol'])
+                token = Token(char, G['SYMBOL'])
         tokens.append(token)
-        
     tokens.append(Token('$', G.EOF))
     return tokens
-
 
 
 
