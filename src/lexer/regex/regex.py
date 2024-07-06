@@ -35,8 +35,8 @@ class Regex:
         self.automaton:DFA = build_automaton(tokens)
 
 def build_automaton(tokens:list[Token]):
-    parser = LR1Parser(G_Regex)
-    parse, operations = parser([token.token_type for token in tokens])
+    parser = LR1Parser(G_Regex,'G_Regex')
+    parse, operations = parser(tokens)
     ast = evaluate_reverse_parse(parse, operations, tokens)
     nfa = ast.evaluate()
     dfa = nfa_to_dfa(nfa)

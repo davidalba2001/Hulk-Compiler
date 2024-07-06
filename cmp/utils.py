@@ -103,16 +103,6 @@ def pprint(item, header=""):
         print(item)
 
 class Token:
-    """
-    Basic token class.
-
-    Parameters
-    ----------
-    lex : str
-        Token's lexeme.
-    token_type : Enum
-        Token's type.
-    """
 
     def __init__(self, lex,token_type,line = None,column = None):
         self.lex = lex
@@ -120,18 +110,7 @@ class Token:
         self.column = column
         self.line = line
 
-    def __str__(self):
-        
-        # return (
-        #     "==========================\n"
-        #     f"Token:\n"
-        #     f"  type: {self.token_type}\n"
-        #     f"  lex: {self.lex}\n"
-        #     f"  line: {self.line}\n"
-        #     f"  column: {self.column}\n"
-        #     "=========================="
-        # )
-
+    def __str__(self):        
         return f'{self.token_type}: {self.lex}'
 
     def __repr__(self):

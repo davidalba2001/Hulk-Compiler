@@ -1,5 +1,35 @@
 from cmp.pycompiler import EOF
 from cmp.parsing import ShiftReduceParser
+from cmp.utils import Token
+
+class TokenList(list):
+    def __getitem__(self, index):
+        if isinstance(index, tuple):
+            idx, attr = index
+            item = super().__getitem__(idx)
+            if isinstance(item, Token) and attr in ['line', 'column', 'lex', 'token_type']:
+                return getattr(item, attr)
+            raise AttributeError(f"{type(item).__name__} object has no attribute '{attr}'")
+        elif isinstance(index, slice):
+            return TokenList(super().__getitem__(index))
+        else:
+            item = super().__getitem__(index)
+            if isinstance(item, Token):
+                return item.lex
+            return item
+
+    def __add__(self, other):
+        if isinstance(other, list):
+            return TokenList(super().__add__(other))
+        return NotImplemented
+
+    def __radd__(self, other):
+        if isinstance(other, list):
+            return TokenList(other + list(self))
+        return NotImplemented
+
+    def __repr__(self):
+        return f"TokenList({super().__repr__()})"
 
 def evaluate_reverse_parse(right_parse, operations, tokens):
     if not right_parse or not operations or not tokens:
@@ -11,7 +41,7 @@ def evaluate_reverse_parse(right_parse, operations, tokens):
     for operation in operations:
         if operation == ShiftReduceParser.SHIFT:
             token = next(tokens)
-            stack.append(token.lex)
+            stack.append(token)
         elif operation == ShiftReduceParser.REDUCE:
             production = next(right_parse)
             head, body = production
@@ -20,7 +50,7 @@ def evaluate_reverse_parse(right_parse, operations, tokens):
             rule = attributes[0]
 
             if len(body):
-                synteticed = [None] + stack[-len(body):]
+                synteticed = TokenList([None]) + stack[-len(body):]
                 value = rule(None, synteticed)
                 stack[-len(body):] = [value]
             else:

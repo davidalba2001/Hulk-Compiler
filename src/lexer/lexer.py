@@ -86,6 +86,7 @@ class Lexer:
             table.append((COMMENT,'#[^\n]*'))
         if IGNORE not in type_tokens:
              table.append((IGNORE,'//[^\n]*'))
+             
     @load_or_build('src/lexer/serialized/lexer_automaton.pkl')
     def _build_automaton(self):
         start = State('start')
@@ -128,7 +129,7 @@ class Lexer:
     def __call__(self, text):
         tokens = []
         errors = []
-        column = line = 0
+        column = line = 1
         
         for lexeme,token_type in self._tokenize(text):
             if(token_type == NEWLINE):
