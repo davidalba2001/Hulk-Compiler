@@ -12,37 +12,6 @@ class FuncInfo:
         self.params = params
         self.function = node
 
-class Protocol:
-    def __init__(self, name: str):
-        self.name = name
-        self.methods: dict[str, Method] = {}
-        self.parent = None
-    
-    def get_method(self, name:str):
-        try:
-            return next(method for method in self.methods if method.name == name)
-        except StopIteration:
-            if self.parent is None:
-                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
-            try:
-                return self.parent.get_method(name)
-            except SemanticError:
-                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
-    
-    def define_method(self, name:str, param_names:list, param_types:list, return_type, node):
-        methods = [len(self.methods[method].param_names) for method in self.methods if name == self.methods[method].name]
-        if len(param_names) in methods:
-            raise SemanticError(f'Method "{name}" already defined in {self.name} with {len(param_names)} params')
-
-        method = Method(name, param_names, param_types, return_type, node)
-        self.methods[name](method)
-        return method
-    def set_parent(self, parent):
-        if self.parent is not None:
-            raise SemanticError(f'Parent protocol is already set for {self.name}.')
-        self.parent = parent
-
-
 class Attribute:
     def __init__(self, name, typex):
         self.name = name
@@ -178,9 +147,58 @@ class Type:
     def __repr__(self):
         return str(self)
 
+class Protocol:
+    def __init__(self, name: str):
+        self.name = name
+        self.methods: dict[str, Method] = {}
+        self.parent = None
+    
+    def get_method(self, name:str):
+        try:
+            return next(method for method in self.methods if method.name == name)
+        except StopIteration:
+            if self.parent is None:
+                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
+            try:
+                return self.parent.get_method(name)
+            except SemanticError:
+                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
+    
+    def define_method(self, name:str, param_names:list, param_types:list, return_type, node):
+        methods = [len(self.methods[method].param_names) for method in self.methods if name == self.methods[method].name]
+        if len(param_names) in methods:
+            raise SemanticError(f'Method "{name}" already defined in {self.name} with {len(param_names)} params')
+
+        method = Method(name, param_names, param_types, return_type, node)
+        self.methods[name](method)
+        return method
+    def set_parent(self, parent):
+        if self.parent is not None:
+            raise SemanticError(f'Parent protocol is already set for {self.name}.')
+        self.parent = parent
+    def implemented_by(self, other: Type):
+        for met in self.methods:
+            if not (self.methods[met] in other.methods or other.bypass()): return False
+        return True
+
+
+
 class ErrorType(Type):
     def __init__(self):
         Type.__init__(self, '<error>')
+
+    def conforms_to(self, other):
+        return True
+
+    def bypass(self):
+        return True
+
+    def __eq__(self, other):
+        return isinstance(other, Type)
+
+class DynamicType(Type):
+    def __init__(self):
+        Type.__init__(self, 'var')
 
     def conforms_to(self, other):
         return True

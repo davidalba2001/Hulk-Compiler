@@ -64,6 +64,7 @@ class TypeBuilderVisitor():
             return self.context.get_type('<error>')
         if self.currentType:
             self.currentType.define_arguments(node.identifier, attribution)
+        
     @visitor.when(MethodNode)
     def visit(self, node: MethodNode):
         type_annotation: TypeNode = self.context.get_type('object')
@@ -149,6 +150,3 @@ class TypeBuilderVisitor():
         
 
 
-
-
-    #TODO: Terminar Protocolos

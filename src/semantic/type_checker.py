@@ -43,11 +43,9 @@ class TypeCheckerVisitor():
         assign: AssignmentNode
         for assign in node.bindings:
             assignment: AssignmentNode = assign
-            vars.append((assignment.identifier.lex, self.visit(assign, scope)))
+            vars.append((assignment.identifier, self.visit(assign, scope)))
         let_scope = scope.create_child()
         for var, type in vars:
-            if type.name == '<error>':
-                return type
             let_scope.define_variable(var, type.name)
         return self.visit(node.body, let_scope)
 
@@ -66,7 +64,7 @@ class TypeCheckerVisitor():
     def visit(self, node: PlusNode, scope: Scope):
         left:Type = self.visit(node.left, scope)
         rigt:Type = self.visit(node.right, scope)
-        if (left.name == rigt.name == 'number') or (left.name == 'number' and rigt.name == 'var') or (left.name == 'var' and rigt.name == 'number') or (left.name == 'var' and rigt.name == 'var'):
+        if left.conforms_to(self.context.get_type('number')) or rigt.conforms_to(self.context.get_type('number')) :
             return self.context.get_type('number')
         else:
             self.errors.append(SemanticError("No se puede sumar tipos distintos a \'number\'"))
@@ -76,7 +74,7 @@ class TypeCheckerVisitor():
     def visit(self, node: MinusNode, scope: Scope):
         left:Type = self.visit(node.left, scope)
         rigt:Type = self.visit(node.right, scope)
-        if (left.name == rigt.name == 'number') or (left.name == 'number' and rigt.name == 'var') or (left.name == 'var' and rigt.name == 'number') or (left.name == 'var' and rigt.name == 'var'):
+        if left.conforms_to(self.context.get_type('number')) or rigt.conforms_to(self.context.get_type('number')) :
             return self.context.get_type('number')
         else:
             self.errors.append(SemanticError("No se puede restar tipos distintos a \'number\'"))
@@ -86,7 +84,7 @@ class TypeCheckerVisitor():
     def visit(self, node: MultiplyNode, scope: Scope):
         left:Type = self.visit(node.left, scope)
         rigt:Type = self.visit(node.right, scope)
-        if (left.name == rigt.name == 'number') or (left.name == 'number' and rigt.name == 'var') or (left.name == 'var' and rigt.name == 'number') or (left.name == 'var' and rigt.name == 'var'):
+        if left.conforms_to(self.context.get_type('number')) or rigt.conforms_to(self.context.get_type('number')) :
             return self.context.get_type('number')
         else:
             self.errors.append(SemanticError("No se puede multiplicar tipos distintos a \'number\'"))
@@ -96,7 +94,7 @@ class TypeCheckerVisitor():
     def visit(self, node: DivideNode, scope: Scope):
         left:Type = self.visit(node.left, scope)
         rigt:Type = self.visit(node.right, scope)
-        if (left.name == rigt.name == 'number') or (left.name == 'number' and rigt.name == 'var') or (left.name == 'var' and rigt.name == 'number') or (left.name == 'var' and rigt.name == 'var'):
+        if left.conforms_to(self.context.get_type('number')) or rigt.conforms_to(self.context.get_type('number')) :
             return self.context.get_type('number')
         else:
             self.errors.append(SemanticError("No se puede dividir tipos distintos a \'number\'"))
@@ -106,11 +104,11 @@ class TypeCheckerVisitor():
     def visit(self, node: NumberNode, scope: Scope):
         left:Type = self.visit(node.left, scope)
         rigt:Type = self.visit(node.right, scope)
-        if (left.name == rigt.name == 'number') or (left.name == 'number' and rigt.name == 'var') or (left.name == 'var' and rigt.name == 'number') or (left.name == 'var' and rigt.name == 'var'):
+        if left.conforms_to(self.context.get_type('number')) or rigt.conforms_to(self.context.get_type('number')) :
             return self.context.get_type('number')
         else:
             self.errors.append(SemanticError("No se puede usar tipos distintos a  \'number\' en una exponenciacion"))
-            return self.context.get_type('<error>')     
+            return self.context.get_type('<error>')
         
     @visitor.when(ConstantNode)
     def visit(self, node: ConstantNode, scope: Scope):
@@ -120,30 +118,149 @@ class TypeCheckerVisitor():
     def visit(self, node:NumberNode, scope: Scope):
         return self.context.get_type('number')
 
+    ############ Con booleanos #################################################################################
+
+    @visitor.when(OrNode)
+    def visit(self, node: OrNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('boolean')) or rigt.conforms_to(self.context.get_type('boolean')) :
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'boolean\' en una expresion or"))
+            return self.context.get_type('<error>')    
+        
+    @visitor.when(AndNode)
+    def visit(self, node: AndNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('boolean')) or rigt.conforms_to(self.context.get_type('boolean')) :
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'boolean\' en una expresion and"))
+            return self.context.get_type('<error>')   
+    
+    @visitor.when(BooleanNode)
+    def visit(self, node: BooleanNode, scope: Scope):
+        return self.context.get_type('boolean')
+    
+    ######################## Comparadores ##############################################################################
+    ###################################################################################################################
+    #TODO: arreglar algunas cosas
+    @visitor.when(LessEqualNode)
+    def visit(self, node: LessEqualNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('boolean')) or rigt.conforms_to(self.context.get_type('boolean')) :
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'boolean\' en una expresion and"))
+            return self.context.get_type('<error>')   
+        
+    @visitor.when(LessThanNode)
+    def visit(self, node: LessThanNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('boolean')) or rigt.conforms_to(self.context.get_type('boolean')) :
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'boolean\' en una expresion and"))
+            return self.context.get_type('<error>')   
+
+    @visitor.when(GreaterEqualNode)
+    def visit(self, node: GreaterEqualNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('boolean')) or rigt.conforms_to(self.context.get_type('boolean')) :
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'boolean\' en una expresion and"))
+            return self.context.get_type('<error>')   
+
+
+    @visitor.when(GreaterThanNode)
+    def visit(self, node: GreaterThanNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('boolean')) or rigt.conforms_to(self.context.get_type('boolean')) :
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'boolean\' en una expresion and"))
+            return self.context.get_type('<error>')   
+    
+    @visitor.when(EqualNode)
+    def visit(self, node: EqualNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('boolean')) or rigt.conforms_to(self.context.get_type('boolean')) :
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'boolean\' en una expresion \'equal\' "))
+            return self.context.get_type('<error>')   
+        
+    @visitor.when(NotEqualNode)
+    def visit(self, node: NotEqualNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        equatable: Protocol = self.context.get_protocol('equatable')
+        if (equatable.implemented_by(left) and rigt.conforms_to(self.context.get_type('number'))):
+            return self.context.get_type('boolean')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  un literal en una expresion \'not equal\' "))
+            return self.context.get_type('<error>')   
+    
+
+    ############ Con strings #################################################################################
+    @visitor.when(StringConcatNode)
+    def visit(self, node: StringConcatNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('string')) or rigt.conforms_to(self.context.get_type('string')) :
+            return self.context.get_type('string')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'string\' en una expresion concatenacion"))
+            return self.context.get_type('<error>')   
+        
+    @visitor.when(StringConcatSpaceNode)
+    def visit(self, node: StringConcatSpaceNode, scope: Scope):
+        left:Type = self.visit(node.left, scope)
+        rigt:Type = self.visit(node.right, scope)
+        if left.conforms_to(self.context.get_type('string')) or rigt.conforms_to(self.context.get_type('string')) :
+            return self.context.get_type('string')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a  \'string\' en una expresion concatenacion"))
+            return self.context.get_type('<error>')   
+    @visitor.when(StringNode)
+    def visit(self, node: StringNode, scope: Scope):
+        return self.context.get_type('string')
 
     #####================================================================================================#######
 
 
-#TODO: Falta implementar protocolo
+#TODO: Revisar que esto pinche
     @visitor.when(AssignmentNode)
     def visit(self, node: AssignmentNode, scope: Scope):
         current_scope = scope.create_child()
-        annotation: Type = self.context.get_type('var')
+        annotation = self.context.get_type('var')
+        protocol = False
         try:
             annotation = self.context.get_type(node.type_annotation)
         except:
-            self.errors.append(SemanticError(f'El tipo {node.type_annotation} anotado a la variable {node.identifier} no esta definido'))
-            return self.context.get_type('<error>')
+            try:
+                annotation = self.context.get_protocol(node.type_annotation)
+                protocol = True
+            except:    
+                self.errors.append(SemanticError(f'El tipo {node.type_annotation} anotado a la variable {node.identifier} no esta definido'))
+                return self.context.get_type('<error>')
         
-        exp_type: Type = self.context.get_type('object')
-        if node.type_annotation == 'var':
-            return self.visit(node.expression, current_scope)
-        else:
-            exp_type = self.visit(node.expression, current_scope)
-        if exp_type.name == 'var': return annotation
-        if not exp_type.conforms_to(annotation):
+        exp_type: Type = self.visit(node.expression, current_scope)
+        if not exp_type.conforms_to(annotation) and not protocol:
             self.errors.append(SemanticError(f'La variable {node.identifier} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
             return self.context.get_type('<error>')
+        elif protocol and not annotation.implemented_by(exp_type):
+            self.errors.append(SemanticError(f'La variable {node.identifier} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
+            return self.context.get_type('<error>')
+        elif not protocol: return exp_type
         else: return annotation
         
     @visitor.when(DassignmentNode)
@@ -154,12 +271,7 @@ class TypeCheckerVisitor():
             self.errors.append(SemanticError(f'La variable {node.identifier} no esta definida'))
             return self.context.get_type('<error>')
         
-        exp_type: Type = self.context.get_type('object')
-        if var.type == 'var':
-            return self.visit(node.expression, current_scope)
-        else:
-            exp_type = self.visit(node.expression, current_scope)
-        if exp_type.name == 'var': return self.context.get_type(var.type)
+        exp_type: Type = self.visit(node.expression, current_scope)
         if not exp_type.conforms_to(self.context.get_type(var.type)):
             self.errors.append(SemanticError(f'La variable {node.identifier} de tipo {self.context.get_type(var.type)} no puede ser asignada con el tipo {exp_type}'))
             return self.context.get_type('<error>')
@@ -181,8 +293,6 @@ class TypeCheckerVisitor():
             self.errors.append(SemanticError(f'La funcion {node.identifier} no tiene sobrecarga definida con {len(node.arguments)}'))
             return self.context.get_type('<error>')
         args = [self.visit(arg) for arg in node.arguments]
-        if self.context.get_type('<error>') in args:
-            return self.context.get_type('<error>')
         return self.visit(FuncInfo(args, definition), scope)
 
     @visitor.when(IdNode)
@@ -209,14 +319,12 @@ class TypeCheckerVisitor():
                 self.errors.append(SemanticError(f'El parametro {params[i][0]} debe recibir un argumento de {typex.name} en la funcion {func_def.identifier}'))
                 return self.context.get_type('<error>')
         result: Type = self.visit(func_def.body, func_def)
-        if result.name == '<error>': return result
-        return_type = self.context.get_type(func_def.type_annotation)
-        if result.conforms_to(return_type) and return_type.name != 'var':
+        return_type: Type = self.context.get_type(func_def.type_annotation)
+        if result.conforms_to(return_type):
             return return_type
-        elif return_type.name == 'var':
-            return result
         else:
-            self.errors.append(SemanticError(f'No se esta retornando el tipo {return_type} en la funcion {func_def.identifier}'))    
+            self.errors.append(SemanticError(f'No se esta retornando el tipo {return_type} en la funcion {func_def.identifier}')) 
+            return self.context.get_type('<error>')
 
     @visitor.when(FuncNode)
     def visit(self, node: FuncNode, scope: Scope):
@@ -225,8 +333,6 @@ class TypeCheckerVisitor():
             name, typex = param
             scope.define_variable(name, typex)
         result: Type = self.visit(node.body, fun_scope)
-        if result.name == '<error>': return result
-        if result.name == 'var': return node.type_annotation
         if not result.conforms_to(node.type_annotation):
             self.errors.append(SemanticError(f'No se esta retornando el tipo {node.type_annotation} en la funcion {node.identifier}'))
             return self.context.get_type('<error>')
@@ -241,6 +347,140 @@ class TypeCheckerVisitor():
             self.errors.append(SemanticError(f'El tipo {node.identifier} no esta definido'))
             return self.context.get_type('<error>')
         exp: Type = self.visit(node.expression)
-        if exp.name is '<error>': return exp
-        if exp.name is 'var' or exp.conforms_to(down_cast): return down_cast
-        
+        if exp.conforms_to(down_cast): return down_cast
+        else: return self.context.get_type('<error>')
+
+    @visitor.when(IfNode)
+    def visit(self, node: IfNode, scope: Scope):
+        cond: Type = self.visit(node.condition, scope)
+        if not cond.conforms_to(self.context.get_type('boolean')):
+            self.errors.append(SemanticError(f'Solo typo booleano para condiciones de if'))
+            return self.context.get_type('<error>')
+        if_scope = scope.create_child()
+        _:Type = self.visit(node.branch, if_scope)
+        for eli in node.elif_nodes:
+            _: Type = self.visit(eli, scope)
+        _: Type = self.visit(node.false_branch, scope)
+        return self.context.get_type('var')
+    
+    @visitor.when(ElifNode)
+    def visit(self, node: ElifNode, scope: Scope):
+        cond: Type = self.visit(node.condition, scope)
+        if not cond.conforms_to(self.context.get_type('boolean')):
+            self.errors.append(SemanticError(f'Solo typo booleano para condiciones de elif'))
+            return self.context.get_type('<error>')
+        if_scope = scope.create_child()
+        result:Type = self.visit(node.branch, if_scope)
+        return result
+
+    @visitor.when(ElseNode)
+    def visit(self, node:ElseNode, scope: Scope):
+        cond: Type = self.visit(node.condition, scope)
+        if not cond.conforms_to(self.context.get_type('boolean')):
+            self.errors.append(SemanticError(f'Solo typo booleano para condiciones de else'))
+            return self.context.get_type('<error>')
+        if_scope = scope.create_child()
+        result:Type = self.visit(node.branch, if_scope)
+        return result
+
+    @visitor.when(WhileNode)
+    def visit(self, node: WhileNode, scope: Scope):
+        cond: Type = self.visit(node.condition, scope)
+        if not cond.conforms_to(self.context.get_type('boolean')):
+            self.errors.append(SemanticError(f'Solo typo booleano para condiciones de while'))
+            return self.context.get_type('<error>')
+        while_scope = scope.create_child()
+        _:Type = self.visit(node.branch, while_scope)
+        return self.context.get_type('var')
+
+
+    @visitor.when(ForNode)
+    def visit(self, node: ForNode, scope: Scope):
+        iterable: Protocol = self.context.create_protocol('iterable')
+        iterand: Type = self.visit(node.iterable, scope)
+        if iterand.name == '<error>': return iterand
+        if not iterable.implemented_by(iterand):
+            self.errors.append(SemanticError(f'El iterador proporcionado no implementa iterable'))
+            return self.context.get_type('<error>')
+        for_scope = scope.create_child()
+        for_scope.define_variable(node.identifier, 'var')
+        result: Type = self.visit(node.body, for_scope)
+        return result
+    
+    @visitor.when(MethodCallNode)
+    def visist(self, node: MethodCallNode, scope: Scope):
+        instance: VariableInfo = None
+        if scope.is_defined(node.type_identifier): instance = scope.find_variable(node.type_identifier)
+        else:
+            self.errors.append(SemanticError(f'La variable {node.type_identifier} no esta definida en el ambito'))
+        instance_type: Type =  self.context.get_type(instance.type)
+        funcs: list[Method] = [method for method in instance_type.methods if method.name == node.identifier]
+        if len(funcs) == 0:
+            self.errors.append(SemanticError(f'La funcion {node.identifier} no esta definida en el tipo {instance_type.name}'))
+            return self.context.get_type('<error>')
+        definition = None
+        for func in funcs:
+            if len(func.param_names) == node.arguments:
+                definition = func.definition
+        if not definition:
+            self.errors.append(SemanticError(f'La funcion {node.identifier} no tiene sobrecarga definida con {len(node.arguments)} en el tipo {instance_type.name}'))
+            return self.context.get_type('<error>')
+        args = [self.visit(arg) for arg in node.arguments]
+        return self.visit(FuncInfo(args, definition), scope)
+    ########### Built-in Functions ####################################################################################
+    ###################################################################################################################
+    @visitor.when(SqrtNode)
+    def visit(self, node: SqrtNode, scope: Scope):
+        argument:Type = self.visit(node.arguments, scope)
+        if not argument.conforms_to(self.context.get_type('number')):
+            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
+            return self.context.get_type('<error>')
+        else: return self.context.get_type('number')
+
+    @visitor.when(SinNode)
+    def visit(self, node: SinNode, scope: Scope):
+        argument:Type = self.visit(node.arguments, scope)
+        if not argument.conforms_to(self.context.get_type('number')):
+            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
+            return self.context.get_type('<error>')
+        else: return self.context.get_type('number')
+
+    @visitor.when(CosNode)
+    def visit(self, node: CosNode, scope: Scope):
+        argument:Type = self.visit(node.arguments, scope)
+        if not argument.conforms_to(self.context.get_type('number')):
+            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
+            return self.context.get_type('<error>')
+        else: return self.context.get_type('number')
+
+    @visitor.when(ExpNode)
+    def visit(self, node: ExpNode, scope: Scope):
+        argument:Type = self.visit(node.arguments, scope)
+        if not argument.conforms_to(self.context.get_type('number')):
+            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
+            return self.context.get_type('<error>')
+        else: return self.context.get_type('number')
+
+    @visitor.when(RandNode)
+    def visit(self, node: RandNode, scope: Scope):
+        return self.context.get_type('number')
+
+    @visitor.when(LogNode)
+    def visit(self, node: LogNode, scope: Scope):
+        left:Type = self.visit(node.arguments[0], scope)
+        rigt:Type = self.visit(node.arguments[1], scope)
+        if left.conforms_to(self.context.get_type('number')) and rigt.conforms_to(self.context.get_type('number')) :
+            return self.context.get_type('number')
+        else:
+            self.errors.append(SemanticError("No se puede usar tipos distintos a \'number\' al evaluar la funcion log"))
+            return self.context.get_type('<error>')
+
+    @visitor.when(PrintNode)
+    def visit(self, node: PrintNode, scope: Scope):
+        argument:Type = self.visit(node.arguments, scope)
+        if not argument.conforms_to(self.context.get_type('number')):
+            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no puede usar argumentos de tipo {argument.name}'))
+            return self.context.get_type('<error>')
+        else: return argument
+    #####################################################################################################################################
+    ###################################################################################################################################

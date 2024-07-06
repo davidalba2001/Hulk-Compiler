@@ -5,7 +5,7 @@ from src.semantic.type_collector import TypeCollectorVisitor
 class Semantic_Check:
     def __init__(self):
         self.context = Context()
-        default_types = ['object', 'number', 'string', 'bool', 'var']
+        default_types = ['object', 'number', 'string', 'boolean', 'var']
         default_functions = ['sen', 'cos', 'sqrt', 'exp', 'rand', 'log', 'print']
         
         for type in default_types:
