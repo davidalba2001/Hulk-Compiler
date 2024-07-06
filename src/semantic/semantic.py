@@ -18,6 +18,17 @@ class Attribute:
     def __repr__(self):
         return str(self)
 
+class Argument:
+    def __init__(self, name, typex):
+        self.name = name
+        self.type: Type = typex
+
+    def __str__(self):
+        return f'[attrib] {self.name} : {self.type.name};'
+
+    def __repr__(self):
+        return str(self)
+
 class Method:
     def __init__(self, name, param_names, params_types, return_type):
         self.name = name
@@ -37,9 +48,9 @@ class Method:
 class Type:
     def __init__(self, name:str):
         self.name = name
-        self.arguments()
-        self.attributes = [Attribute]
-        self.methods = [Method]
+        self.arguments: Argument = []
+        self.attributes:Attribute = []
+        self.methods: Method = []
         self.parent = None
 
     def set_parent(self, parent):
@@ -157,7 +168,7 @@ class IntType(Type):
 class Context:
     def __init__(self):
         self.types = {}
-
+        self.functions = {}
     def create_type(self, name:str):
         if name in self.types:
             raise SemanticError(f'Type with the same name ({name}) already in context.')
@@ -184,7 +195,7 @@ class VariableInfo:
 class Scope:
     def __init__(self, parent=None):
         self.locals = []
-        self.finctions: dict = {}
+        self.functions: dict = {}
         self.parent = parent
         self.children = []
         self.index = 0 if parent is None else len(parent)
