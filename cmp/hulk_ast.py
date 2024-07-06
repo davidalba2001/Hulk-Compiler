@@ -42,6 +42,8 @@ class TypeNode(StatementNode):
         self.params = params
         self.superType = superType
         self.body = body
+        self.attributes = body[0]
+        self.methods = body[1]
         
 class ProtocolNode(StatementNode):
     def __init__(self, identifier,superProtocol,body):

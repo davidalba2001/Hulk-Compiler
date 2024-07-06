@@ -48,6 +48,7 @@ class Method:
 class Type:
     def __init__(self, name:str):
         self.name = name
+        self.inheritance: Type = None
         self.arguments: Argument = []
         self.attributes:Attribute = []
         self.methods: Method = []
@@ -68,6 +69,13 @@ class Type:
                 return self.parent.get_attribute(name)
             except SemanticError:
                 raise SemanticError(f'Attribute "{name}" is not defined in {self.name}.')
+            
+    def define_arguments(self, name: str, typex):
+        if name not in self.arguments:
+            self.arguments[name] = typex
+        else: 
+            raise SemanticError(f'Argument "{name}" is already defined in {self.name}.')
+        
 
     def define_attribute(self, name:str, typex):
         try:
@@ -168,7 +176,8 @@ class IntType(Type):
 class Context:
     def __init__(self):
         self.types = {}
-        self.functions = {}
+        self.functions: dict[str, list]= {}
+        self.protocols = {}
     def create_type(self, name:str):
         if name in self.types:
             raise SemanticError(f'Type with the same name ({name}) already in context.')
