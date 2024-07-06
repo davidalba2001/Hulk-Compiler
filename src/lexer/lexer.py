@@ -13,7 +13,7 @@ sys.path.append(regex_path)
 print(f"sys.path: {sys.path}")
 
 try:
-    from regex import Regex
+    from src.lexer.regex import Regex
     from cmp.automata import State
     from cmp.utils import Token
     from enum import Enum

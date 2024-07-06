@@ -29,7 +29,7 @@ class TypeBuilderVisitor():
             inheritance = self.context.get_type(node.superType.identifier)
         except:
             self.errors.append(SemanticError(f'El tipo  {node.inheritance} del que se hereda no esta definido'))
-            inheritance = self.context.get_type('object')
+            return self.context.get_type('<error>')
         
         self.currentType.inheritance = inheritance
         
@@ -40,7 +40,7 @@ class TypeBuilderVisitor():
                 type: Type =  self.context.get_type(type)
             except: 
                 self.errors.append(SemanticError(f'El tipo anotado como \"{type.name}\" no esta definido'))
-                type = self.context.get_type('object')
+                return self.context.get_type('<error>')
             try:
                 self.currentType.define_arguments(name, type)      
             except:
@@ -61,7 +61,7 @@ class TypeBuilderVisitor():
             attribution = self.context.get_type(node.type_annotation)
         except:
             self.errors.append(SemanticError(f'El tipo {node.type_annotation} anotado a el campo {node.identifier} no esta definido'))
-            attribution = self.context.get_type('var')
+            return self.context.get_type('<error>')
         if self.currentType:
             self.currentType.define_arguments(node.identifier, attribution)
     @visitor.when(MethodNode)
@@ -79,13 +79,15 @@ class TypeBuilderVisitor():
             name, type = param
             if name in args_names:
                 self.errors.append(SemanticError(f'Ya el nombre de variable {name} ya esta en uso'))
+                return self.context.get_type('<error>')
+
             args_names.append(name)
             try:
                 self.context.get_type(type)
                 args_types.append(type)
             except:
                 self.errors.append(f'El tipo del parametro {type} que se le pasa a la funcion {node.identifier} no esta definido')
-                args_types.append('object')
+                return self.context.get_type('<error>')
             
         if self.currentType:
             try:
@@ -100,7 +102,8 @@ class TypeBuilderVisitor():
             type_annotation = self.context.get_type(node.type_annotation)
         except:
             self.errors.append(f'El tipo de retorno {node.type_annotation} no esta definido')
-        
+            return self.context.get_type('<error>')
+
         args: List = node.params
         args_names = []
         args_types = []
@@ -108,13 +111,14 @@ class TypeBuilderVisitor():
             name, type = param
             if name in args_names:
                 self.errors.append(SemanticError(f'Ya el nombre de variable {name} ya esta en uso'))
+                return self.context.get_type('<error>')
             args_names.append(name)
             try:
                 self.context.get_type(type)
                 args_types.append(type)
             except:
                 self.errors.append(f'El tipo del parametro {type} que se le pasa a la funcion {node.identifier} no esta definido')
-                args_types.append('object')
+                return self.context.get_type('<error>')
             
             functions = [self.context.functions[func] for func in self.context.functions
                          if self.context.functions[func] == node.identifier and len(self.context.functions) == len(args)]

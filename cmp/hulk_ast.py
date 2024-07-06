@@ -125,8 +125,12 @@ class IsNode(ExpressionNode):
         self.expression = expression
         self.identifier = identifier
         
- #########################################################################       
-        
+ #########################################################################      
+       
+
+class IdNode(AtomicNode):
+    def __init__(self, lex, ntype='IDENTIFIER'):
+        super().__init__(lex, ntype)
 class FuncNode(CallableNode, StatementNode):
     def __init__(self, identifier, params, type_annotation, body):
         CallableNode.__init__(self, identifier, params, type_annotation, body, 'FUNCTION')

@@ -29,7 +29,7 @@ class TypeCheckerVisitor():
     def visit(self, node: TypeNode, scope: Scope):
         type_scope = scope.create_child()
         methods_scope = scope.create_child()
-        methods_scope.define_variable('self', node.identifier)
+        methods_scope.define_variable('self', node.identifier.lex)
         for param, type in node.params:
             type_scope.define_variable(param, type)
         for att in node.attributes:
@@ -39,9 +39,16 @@ class TypeCheckerVisitor():
     
     @visitor.when(LetNode)
     def visit(self, node: LetNode, scope: Scope):
+        vars = []
+        assign: AssignmentNode
         for assign in node.bindings:
-            self.visit(assign, scope)
+            assignment: AssignmentNode = assign
+            vars.append((assignment.identifier.lex, self.visit(assign, scope)))
         let_scope = scope.create_child()
+        for var, type in vars:
+            if type.name == '<error>':
+                return type
+            let_scope.define_variable(var, type.name)
         return self.visit(node.body, let_scope)
 
     @visitor.when(BlockNode)
@@ -64,7 +71,7 @@ class TypeCheckerVisitor():
             return left
         else:
             self.errors.append(SemanticError("No se puede sumar tipos distintos a \'number\'"))
-            return self.context.get_type('object')
+            return self.context.get_type('<error>')
     
     @visitor.when(MinusNode)
     def visit(self, node: MinusNode, scope: Scope):
@@ -74,7 +81,7 @@ class TypeCheckerVisitor():
             return left
         else:
             self.errors.append(SemanticError("No se puede restar tipos distintos a \'number\'"))
-            return self.context.get_type('object')
+            return self.context.get_type('<error>')
     
     @visitor.when(MultiplyNode)
     def visit(self, node: MultiplyNode, scope: Scope):
@@ -84,7 +91,7 @@ class TypeCheckerVisitor():
             return left
         else:
             self.errors.append(SemanticError("No se puede multiplicar tipos distintos a \'number\'"))
-            return self.context.get_type('object')   
+            return self.context.get_type('<error>')   
             
     @visitor.when(DivideNode)
     def visit(self, node: DivideNode, scope: Scope):
@@ -94,7 +101,7 @@ class TypeCheckerVisitor():
             return left
         else:
             self.errors.append(SemanticError("No se puede dividir tipos distintos a \'number\'"))
-            return self.context.get_type('object')       
+            return self.context.get_type('<error>')       
     
     @visitor.when(PowerNode)
     def visit(self, node: NumberNode, scope: Scope):
@@ -104,7 +111,7 @@ class TypeCheckerVisitor():
             return left
         else:
             self.errors.append(SemanticError("No se puede usar tipos distintos a  \'number\' en una exponenciacion"))
-            return self.context.get_type('object')     
+            return self.context.get_type('<error>')     
         
     @visitor.when(ConstantNode)
     def visit(self, node: ConstantNode, scope: Scope):
@@ -126,8 +133,8 @@ class TypeCheckerVisitor():
         try:
             annotation = self.context.get_type(node.type_annotation)
         except:
-            self.errors.append(SemanticError(f'El tipo {node.type_annotation} anotado a la variable {node.identifier} no esta definido'))
-            return self.context.get_type('object')
+            self.errors.append(SemanticError(f'El tipo {node.type_annotation} anotado a la variable {node.identifier.lex} no esta definido'))
+            return self.context.get_type('<error>')
         
         exp_type: Type = self.context.get_type('object')
         if node.type_annotation == 'var':
@@ -136,16 +143,31 @@ class TypeCheckerVisitor():
         else:
             exp_type = self.visit(node.expression, current_scope)
         if not exp_type.conforms_to(annotation):
-            self.errors.append(SemanticError(f'La variable {node.identifier} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
-            return self.context.get_type('object')
+            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
+            return self.context.get_type('<error>')
         else: return exp_type
         
 
     @visitor.when(FunctionCallNode)
     def visit(self, node: FunctionCallNode, scope: Scope):
+        try:
+            definition = self.context.functions[node.identifier.lex]
+        except:
+            self.errors.append(SemanticError(f'La funcion {node.identifier.lex} no esta definida en el contexto'))
+            return self.context.get_type('<error>')
         args = [self.visit(arg) for arg in node.arguments]
-        
-
-        
+        if self.context.get_type('<error>') in args:
+            return self.context.get_type('<error>')
+        return self.visit(FuncInfo(args, definition), scope)
+    
+    @visitor.when(IdNode)
+    def visit(self, node: IdNode, scope: Scope):
+        variable: VariableInfo = None
+        if scope.is_defined(node.lex):
+            variable =  scope.find_variable()
+            return self.context.get_type(variable.type)
+        else:
+            self.errors.append(SemanticError(f"La variable {node.lex} no esta definida"))
+            return self.context.get_type('<error>')
 
 
