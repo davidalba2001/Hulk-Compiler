@@ -11,7 +11,37 @@ class FuncInfo:
     def __init__(self, params, node: FuncNode):
         self.params = params
         self.function = node
-        
+
+class Protocol:
+    def __init__(self, name: str):
+        self.name = name
+        self.methods: dict[str, Method] = {}
+        self.parent = None
+    
+    def get_method(self, name:str):
+        try:
+            return next(method for method in self.methods if method.name == name)
+        except StopIteration:
+            if self.parent is None:
+                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
+            try:
+                return self.parent.get_method(name)
+            except SemanticError:
+                raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
+    
+    def define_method(self, name:str, param_names:list, param_types:list, return_type, node):
+        methods = [len(self.methods[method].param_names) for method in self.methods if name == self.methods[method].name]
+        if len(param_names) in methods:
+            raise SemanticError(f'Method "{name}" already defined in {self.name} with {len(param_names)} params')
+
+        method = Method(name, param_names, param_types, return_type, node)
+        self.methods[name](method)
+        return method
+    def set_parent(self, parent):
+        if self.parent is not None:
+            raise SemanticError(f'Parent protocol is already set for {self.name}.')
+        self.parent = parent
+
 
 class Attribute:
     def __init__(self, name, typex):
@@ -36,11 +66,12 @@ class Argument:
         return str(self)
 
 class Method:
-    def __init__(self, name, param_names, params_types, return_type):
+    def __init__(self, name, param_names, params_types, return_type, node):
         self.name = name
         self.param_names = param_names
         self.param_types = params_types
         self.return_type = return_type
+        self.definition = node
 
     def __str__(self):
         params = ', '.join(f'{n}:{t.name}' for n,t in zip(self.param_names, self.param_types))
@@ -104,11 +135,12 @@ class Type:
             except SemanticError:
                 raise SemanticError(f'Method "{name}" is not defined in {self.name}.')
 
-    def define_method(self, name:str, param_names:list, param_types:list, return_type):
-        if name in (method.name for method in self.methods):
-            raise SemanticError(f'Method "{name}" already defined in {self.name}')
+    def define_method(self, name:str, param_names:list, param_types:list, return_type, node):
+        methods = [len(method.param_names) for method in self.methos if name == method.name]
+        if len(param_names) in methods:
+            raise SemanticError(f'Method "{name}" already defined in {self.name} with {len(param_names)} params')
 
-        method = Method(name, param_names, param_types, return_type)
+        method = Method(name, param_names, param_types, return_type, node)
         self.methods.append(method)
         return method
 
@@ -179,13 +211,21 @@ class IntType(Type):
     def __eq__(self, other):
         return other.name == self.name or isinstance(other, IntType)
 
+class DynamicType(Type):
+    def __init__(self):
+        super().__init__(self, 'var')
+    
+    def bypass(self):
+        return True
+
 class Context:
     def __init__(self):
-        self.types = {}
-        self.functions: dict[str, list]= {}
+        self.types: dict[str, Type] = {}
+        self.functions: dict[str, list[Method]]= {}
         self.protocols = {}
     def create_type(self, name:str):
-        if name in self.types:
+
+        if name in self.types or name in self.protocols or name in self.functions :
             raise SemanticError(f'Type with the same name ({name}) already in context.')
         typex = self.types[name] = Type(name)
         return typex
@@ -195,6 +235,19 @@ class Context:
             return self.types[name]
         except KeyError:
             raise SemanticError(f'Type "{name}" is not defined.')
+        
+    def get_protocol(self, name:str):
+        try:
+            return self.protocols[name]
+        except KeyError:
+            raise SemanticError(f'Protocol "{name}" is not defined.')
+        
+    def create_protocol(self, name: str):
+        if name in self.types or name in self.protocols or name in self.functions :
+            raise SemanticError(f'Protocol with the same name ({name}) already in context.')
+        protocol = self.protocols[name] = Type(name)
+        return protocol
+
 
     def __str__(self):
         return '{\n\t' + '\n\t'.join(y for x in self.types.values() for y in str(x).split('\n')) + '\n}'
@@ -233,7 +286,7 @@ class Scope:
         try:
             return next(x for x in locals if x.name == vname)
         except StopIteration:
-            return self.parent.find_variable(vname, self.index) if self.parent is None else None
+            return self.parent.find_variable(vname, self.index) if not(self.parent is None) else None
 
     def is_defined(self, vname):
         return self.find_variable(vname) is not None

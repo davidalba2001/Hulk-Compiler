@@ -34,13 +34,16 @@ class TypeCollectorVisitor():
         else: self.errors.append(f"El nombre {node.identifier} ya esta en uso")
     @visitor.when(FuncNode)
     def visit(self, node: FuncNode):
-        if not(node.identifier in self.context.functions and node.identifier in self.context.types ):
+        if not(node.identifier in self.context.functions or node.identifier in self.context.types or node.identifier in self.context.protocols):
             self.context.functions[node.identifier] = []
             
     @visitor.when(ProtocolNode)
-    def visit(self, node):
-        pass
+    def visit(self, node: ProtocolNode):
+        try:
+            self.context.create_protocol(node.identifier)
+        except:
+            self.errors.append(SemanticError(f'El nombre de protocolo {node.identifier} ya ha sido tomado'))
 
-    #TODO: Terminar Protocolos
+
 
 

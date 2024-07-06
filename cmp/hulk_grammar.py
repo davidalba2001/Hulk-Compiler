@@ -76,7 +76,7 @@ expression %= method_call ,lambda h,s: s[1]
 expression %= type_inst ,lambda h,s: s[1]
 expression %= vector_indexing ,lambda h,s: s[1]
 expression %= expression + as_keyword + identifier ,lambda h,s: AsNode(s[1],s[3])
-expression %= identifier , lambda h, s: s[1]
+expression %= identifier , lambda h, s: IdNode(s[1])
 
 # Expression Block
 expression_block %= brace_open + statement_block + brace_close ,lambda h,s: BlockNode(s[2])

@@ -44,7 +44,7 @@ class TypeBuilderVisitor():
             try:
                 self.currentType.define_arguments(name, type)      
             except:
-                self.errors.append(f'Existenten mas argumentos con el nombre {name.id}')
+                self.errors.append(f'Existenten mas argumentos con el nombre {name}')
 
         for attrDef in node.attributes:
             self.visit(attrDef)
@@ -91,7 +91,7 @@ class TypeBuilderVisitor():
             
         if self.currentType:
             try:
-                self.currentType.define_method(node.identifier, args_names, args_types, type_annotation)
+                self.currentType.define_method(node.identifier, args_names, args_types, type_annotation, node)
             except:
                 self.errors.append(SemanticError(f'La funcion {node.identifier} ya existe en el contexto de {self.currentType.name}.'))
             
@@ -121,14 +121,33 @@ class TypeBuilderVisitor():
                 return self.context.get_type('<error>')
             
             functions = [self.context.functions[func] for func in self.context.functions
-                         if self.context.functions[func] == node.identifier and len(self.context.functions) == len(args)]
+                         if func == node.identifier and len(self.context.functions) == len(args)]
             if functions == 0:
-                self.context.functions[node.identifier].append(Method(node.identifier, args_names, args_types, type_annotation))
+                self.context.functions[node.identifier].append(Method(node.identifier, args_names, args_types, type_annotation, node))
             else:
                 self.errors.append(SemanticError(f'La funcion {node.identifier} ya esta definida con {len(args)} argumentos'))
     @visitor.when(ProtocolNode)
     def visit(self, node:ProtocolNode):
-        pass
+        prot: Protocol = self.context.get_protocol(node.identifier)
+        try:
+            extend: Protocol = self.context.get_protocol(node.superProtocol)
+        except:
+            self.errors.append(SemanticError(f'El protocolo {node.superProtocol} extendido en el protocolo {node.identifier} no esta definido'))
+            return self.context.get_type('<error>')
+        body = node.body
+        for dec in body:
+            try:
+                prot.define_method(dec[0], [name for (name,_) in dec[1]], [typex for (_, typex) in dec[1]], dec[0], node)
+            except:
+                self.errors.append(SemanticError(f'El metodo {dec[0]} ya esta definido con {len(dec[1])} parametros'))
+        ext_methods: dict[str, Method] = extend.methods
+        for ext in ext_methods:
+            try:
+                prot.define_method(ext, ext_methods[ext].param_names, ext_methods[ext].param_types, ext_methods[ext].return_type, node)
+            except:
+                self.errors.append(SemanticError(f'El metodo {ext} ya esta definido con {len(dec[1])} parametros en el protocolo {node.identifier}'))
+        
+
 
 
 
