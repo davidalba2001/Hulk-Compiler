@@ -9,6 +9,14 @@ class Symbol(object):
     def __str__(self):
         return self.Name
 
+    def __hash__(self):
+        return hash(self.Name)
+    
+    def __eq__(self, other):
+        if isinstance(other, Symbol):
+            return self.Name == other.Name
+        return False
+    
     def __repr__(self):
         return repr(self.Name)
 
@@ -24,7 +32,7 @@ class Symbol(object):
             return SentenceList(Sentence(self), other)
 
         raise TypeError(other)
-
+     
     @property
     def IsEpsilon(self):
         return False
@@ -95,7 +103,7 @@ class Terminal(Symbol):
 
     def __init__(self, name, grammar):
         super().__init__(name, grammar)
-
+    
     @property
     def IsTerminal(self):
         return True
