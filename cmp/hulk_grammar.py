@@ -5,7 +5,7 @@ Hulk_G = Grammar()
 
 program = Hulk_G.NonTerminal('PROGRAM', startSymbol = True)  
 expression, expression_block, statements, main_expression ,function_decls= Hulk_G.NonTerminals('EXPRESSION EXPRESSION_BLOCK STATEMENTS MAIN_EXPRESSION FUNCTION_DECLS') 
-extended_expression = Hulk_G.NonTerminal('EXTENDED_EXPRESSION')
+extended_expression,super_expression = Hulk_G.NonTerminal('EXTENDED_EXPRESSION SUPER_EXPRESSION ')
 arithmetic_expr, term, exponential_term, factor = Hulk_G.NonTerminals('ARITHMETIC_EXPR TERM EXPONENTIAL_TERM FACTOR')
 function_decl, function_inline, function_full = Hulk_G.NonTerminals('FUNCTION_DECL FUNCTION_INLINE FUNCTION_FULL')  
 function_call, builtin_function_call = Hulk_G.NonTerminals('FUNCTION_CALL BUILTIN_FUNCTION_CALL')  
@@ -67,17 +67,21 @@ statement  %= type_decl, lambda h, s : ([s[1]],[],[])
 statement  %= function_decl, lambda h, s:([],[s[1]],[])
 statement  %= protocol_decl, lambda h, s: ([],[],[s[1]])
 
-main_expression %= extended_expression + semicolon ,lambda h,s: s[1]
+main_expression %= super_expression + semicolon ,lambda h,s: s[1]
 main_expression %= expression_block ,lambda h,s: s[1]
 
 # Expressions
+
+super_expression %=  boolean_expr ,lambda h,s: s[1]
+#super_expression %= extended_expression ,lambda h,s: s[1]
+
 extended_expression %= arithmetic_expr ,lambda h,s: s[1]
 
 expression %= expression_block ,lambda h,s: s[1]
 expression %= let_expr ,lambda h,s: s[1]
 expression %= function_call ,lambda h,s: s[1]
 expression %= dassignment ,lambda h,s: s[1]
-expression %= boolean_expr ,lambda h,s: s[1]
+# expression %= boolean_expr ,lambda h,s: s[1]
 expression %= conditional_expr ,lambda h,s: s[1]
 expression %= while_loop ,lambda h,s: s[1]
 expression %= for_loop ,lambda h,s: s[1]
@@ -88,7 +92,7 @@ expression %= vector_indexing ,lambda h,s: s[1]
 expression %= as_expression ,lambda h,s: s[1]
 expression %= identifier , lambda h, s: IdNode(s[1],s[1,line])
 
-as_expression %= extended_expression + as_keyword + identifier ,lambda h,s: AsNode(s[1],s[3],s[2,line])
+as_expression %= super_expression + as_keyword + identifier ,lambda h,s: AsNode(s[1],s[3],s[2,line])
 # Expression Block
 expression_block %= brace_open + statement_block + brace_close ,lambda h,s: BlockNode(s[2])
 
@@ -96,7 +100,7 @@ expression_block %= brace_open + statement_block + brace_close ,lambda h,s: Bloc
 statement_block %= statement_block + expression_statement ,lambda h,s: [s[1]] + s[2]
 statement_block %= expression_statement ,lambda h,s: s[1]
 
-expression_statement %= extended_expression + semicolon ,lambda h,s: s[2]
+expression_statement %= super_expression + semicolon ,lambda h,s: s[2]
 #expression_statement %= expression ,lambda h,s: s[2]
 # Arithmetic Expression
 arithmetic_expr %= arithmetic_expr + plus + term ,lambda h,s: PlusNode(s[1],s[3],s[2,line])
@@ -124,22 +128,22 @@ binding_list %= binding ,lambda h,s: s[1]
 binding %= assignment ,lambda h,s: s[1]
 binding %= dassignment ,lambda h,s: s[1]
 
-assignment %= identifier + optional_type_annotation + assign + extended_expression ,lambda h,s: AssignmentNode(s[1],s[2],s[4],s[3,line])
+assignment %= identifier + optional_type_annotation + assign + super_expression ,lambda h,s: AssignmentNode(s[1],s[2],s[4],s[3,line])
 # ? Todo: Se pudiera hacer una dassign y declarar nuevo type_annotation?
-dassignment %= identifier + dassign + extended_expression , lambda h,s: DassignmentNode(s[1],s[3],s[2,line])
+dassignment %= identifier + dassign + super_expression , lambda h,s: DassignmentNode(s[1],s[3],s[2,line])
 
 type_annotation %= colon + identifier ,lambda h,s: s[2]
 
 optional_type_annotation %= type_annotation ,lambda h,s: s[1]
 optional_type_annotation %= Hulk_G.Epsilon ,lambda h,s: "Var" #Todo : Duda de si esto devuelve None pudiera modelars
 
-let_body %=  extended_expression ,lambda h,s: s[1] 
+let_body %=  super_expression ,lambda h,s: s[1] 
 # Functions Statmenets
 
 function_decl %= function_inline ,lambda h,s: s[1]
 function_decl %= function_full ,lambda h,s: s[1]
 
-function_inline %= function_keyword + identifier + parentized_param_list + optional_type_annotation + arrow + extended_expression ,lambda h,s: FuncNode(s[2],s[3],s[4],s[6],s[1,line])
+function_inline %= function_keyword + identifier + parentized_param_list + optional_type_annotation + arrow + super_expression ,lambda h,s: FuncNode(s[2],s[3],s[4],s[6],s[1,line])
 function_full %= function_keyword + identifier + parentized_param_list + optional_type_annotation + expression_block,lambda h,s: FuncNode(s[2],s[3],s[4],s[5],s[1,line])
 
 param_list %= param_list  + comma + param ,lambda h,s: [s[1]] + s[3]
@@ -157,7 +161,7 @@ function_call %= builtin_function_call ,lambda h,s: s[1]
  
 argument_list %= argument_list + comma + argument ,lambda h,s: [s[1]] + s[2]
 argument_list %= Hulk_G.Epsilon ,lambda h,s: h[0]
-argument %= extended_expression ,lambda h,s: s[1]
+argument %= super_expression ,lambda h,s: s[1]
 
 optional_parentized_argument_list %= parentized_argument_list ,lambda h,s: s[1]
 optional_parentized_argument_list %= Hulk_G.Epsilon ,lambda h,s: h[0]
@@ -165,13 +169,13 @@ optional_parentized_argument_list %= Hulk_G.Epsilon ,lambda h,s: h[0]
 parentized_argument_list %= paren_open + argument_list + paren_close ,lambda h,s: s[1]
 
 
-builtin_function_call %= sqrt_keyword + paren_open + extended_expression + paren_close,lambda h,s: SqrtNode(s[3],s[1,line])
-builtin_function_call %= sin_keyword + paren_open + extended_expression + paren_close,lambda h,s: SinNode(s[3],s[1,line])
-builtin_function_call %= cos_keyword + paren_open + extended_expression + paren_close,lambda h,s: CosNode(s[3],s[1,line])
-builtin_function_call %= exp_keyword + paren_open + extended_expression + paren_close,lambda h,s: ExpNode(s[3],s[1,line])
+builtin_function_call %= sqrt_keyword + paren_open + super_expression + paren_close,lambda h,s: SqrtNode(s[3],s[1,line])
+builtin_function_call %= sin_keyword + paren_open + super_expression + paren_close,lambda h,s: SinNode(s[3],s[1,line])
+builtin_function_call %= cos_keyword + paren_open + super_expression + paren_close,lambda h,s: CosNode(s[3],s[1,line])
+builtin_function_call %= exp_keyword + paren_open + super_expression + paren_close,lambda h,s: ExpNode(s[3],s[1,line])
 builtin_function_call %= rand_keyword + paren_open + paren_close,lambda h,s: RandNode(s[1,line])
-builtin_function_call %= log_keyword + paren_open + extended_expression + comma + extended_expression + paren_close,lambda h,s: LogNode([s[3]] + s[5],s[1,line])
-builtin_function_call %= print_keyword + paren_open + extended_expression + paren_close,lambda h,s: PrintNode(s[3],s[1,line])
+builtin_function_call %= log_keyword + paren_open + super_expression + comma + super_expression + paren_close,lambda h,s: LogNode([s[3]] + s[5],s[1,line])
+builtin_function_call %= print_keyword + paren_open + super_expression + paren_close,lambda h,s: PrintNode(s[3],s[1,line])
 
 # Boolean Expression
 boolean_expr %= boolean_expr + or_op + boolean_term ,lambda h,s: OrNode(s[1],s[3],s[2,line])
@@ -186,7 +190,8 @@ boolean_factor %= paren_open + boolean_expr + paren_close,lambda h,s: s[2]
 boolean_factor %= relational_expr ,lambda h,s: s[1]
 boolean_factor %= true_keyword   ,lambda h,s: BooleanNode(s[1],s[1,line])
 boolean_factor %= false_keyword ,lambda h,s: BooleanNode(s[1],s[1,line])
-is_expression %= extended_expression + is_keyword + identifier ,lambda h,s: IsNode(s[1],s[3],s[2,line])
+
+is_expression %= super_expression + is_keyword + identifier ,lambda h,s: IsNode(s[1],s[3],s[2,line])
 
 relational_expr %= relational_expr + less_than + relatable_term ,lambda h,s: LessThanNode(s[1],s[3],s[2,line])
 relational_expr %= relational_expr + greater_than + relatable_term ,lambda h,s: GreaterThanNode(s[1],s[3],s[2,line])
@@ -201,19 +206,19 @@ relatable_term %= extended_expression ,lambda h,s: s[1]
 # Conditional Expression
 conditional_expr %= if_clause + elif_clauses + else_clause ,lambda h,s: IfNode(s[1][0],s[1][1],s[2],s[3],s[1][2])
     
-if_clause %= if_keyword + paren_open + extended_expression + paren_close + extended_expression,lambda h,s:(s[3],s[5],s[1,line])
+if_clause %= if_keyword + paren_open + super_expression + paren_close + super_expression,lambda h,s:(s[3],s[5],s[1,line])
 
 elif_clauses %= elif_clauses + elif_clause,lambda h,s: [s[1]] + s[2]
 elif_clauses %= Hulk_G.Epsilon ,lambda h,s: h[0]
 
-elif_clause %= elif_keyword + paren_open + extended_expression + paren_close + extended_expression ,lambda h,s: ElifNode(s[3],s[5],s[1,line])
+elif_clause %= elif_keyword + paren_open + super_expression + paren_close + super_expression ,lambda h,s: ElifNode(s[3],s[5],s[1,line])
 
-else_clause %= else_keyword + extended_expression , lambda h,s: ElseNode(s[2],s[1,line])
+else_clause %= else_keyword + super_expression , lambda h,s: ElseNode(s[2],s[1,line])
 else_clause %= Hulk_G.Epsilon ,lambda h,s: h[0]
 
 # Loop Expression
-while_loop %= while_keyword + paren_open + extended_expression + paren_close + extended_expression ,lambda h,s: WhileNode(s[3],s[5],s[1,line])
-for_loop %= for_keyword + paren_open + identifier + in_keyword + extended_expression + paren_close + extended_expression ,lambda h,s: ForNode(s[3],s[5],s[7],s[1,line])
+while_loop %= while_keyword + paren_open + super_expression + paren_close + super_expression ,lambda h,s: WhileNode(s[3],s[5],s[1,line])
+for_loop %= for_keyword + paren_open + identifier + in_keyword + super_expression + paren_close + super_expression ,lambda h,s: ForNode(s[3],s[5],s[7],s[1,line])
 
 # String Expression
 string_expr %= concat_string,lambda h,s : s[1]
@@ -221,10 +226,10 @@ string_expr %= concat_space_string,lambda h,s : s[1]
 string_expr %= string_literal,lambda h,s : StringNode(s[1],s[1,line])
  
 
-concat_string %= concat_string + at_symbol + extended_expression ,lambda h,s : StringConcatNode(s[1],s[3],s[2,line])
+concat_string %= concat_string + at_symbol + super_expression ,lambda h,s : StringConcatNode(s[1],s[3],s[2,line])
 concat_string % string_expr,lambda h,s : s[1]
  
-concat_space_string %= concat_space_string + at_at_symbol + extended_expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
+concat_space_string %= concat_space_string + at_at_symbol + super_expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
 concat_space_string %= string_expr, lambda h,s : s[1]
 # Type Statement
 type_decl %= type_keyword + identifier + optional_parentized_param_list + inherits_clause + brace_open + type_body + brace_close, lambda h,s: TypeNode(s[2],s[3],s[4],s[6],s[1,line])
@@ -244,7 +249,7 @@ attribute_or_method %= method_decl,lambda h,s :lambda h,s : ([],[s[1]])
 method_decl %= method_inline ,lambda h,s : s[1]
 method_decl %= method_full ,lambda h,s : s[1]
 
-method_inline %= identifier + parentized_param_list + optional_type_annotation + arrow + extended_expression, lambda h,s: MethodNode(s[1],s[2],s[3],s[5],s[1,line])
+method_inline %= identifier + parentized_param_list + optional_type_annotation + arrow + super_expression, lambda h,s: MethodNode(s[1],s[2],s[3],s[5],s[1,line])
 method_full %= identifier + parentized_param_list + optional_type_annotation + expression_block, lambda h,s: MethodNode(s[1],s[2],s[3],s[4],s[1,line])
 # Type Instnace Expression
 type_inst %= new_keyword +  identifier + parentized_argument_list ,lambda h,s : InstanceNode(s[2],s[3],s[1,line])
@@ -275,7 +280,7 @@ vector_inst %= vector_explicit ,lambda h,s :s[1]
 vector_inst %= vector_implicit,lambda h,s :s[1]
 
 vector_explicit %= square_bracket_open + argument_list + square_bracket_close,lambda h,s : ExplicitVectorNode(s[2],s[1,line])
-vector_implicit %= square_bracket_open + extended_expression + double_pipe + identifier + in_keyword + extended_expression + square_bracket_close,lambda h,s :ImplicitVectorNode(s[2],s[4],s[6],s[1,line])
+vector_implicit %= square_bracket_open + super_expression + double_pipe + identifier + in_keyword + super_expression + square_bracket_close,lambda h,s :ImplicitVectorNode(s[2],s[4],s[6],s[1,line])
 
 # Vector Indexing Expression
-vector_indexing %= identifier + square_bracket_open + extended_expression + square_bracket_close,lambda h,s : VectorIndexNode(s[1],s[3],s[1,line])
+vector_indexing %= identifier + square_bracket_open + super_expression + square_bracket_close,lambda h,s : VectorIndexNode(s[1],s[3],s[1,line])
