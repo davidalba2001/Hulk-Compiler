@@ -35,7 +35,7 @@ class Argument:
         return str(self)
 
 class Method:
-    def __init__(self, name, param_names, params_types, return_type, node):
+    def __init__(self, name, param_names, params_types, return_type):
         self.name = name
         self.param_names = param_names
         self.param_types = params_types
@@ -64,7 +64,7 @@ class Type:
             raise SemanticError(f'Parent type is already set for {self.name}.')
         self.parent = parent
 
-    def get_attribute(self, name):
+    def decget_attribute(self, name):
         try:
             return next(attr for attr in self.attributes if attr.name == name)
         except StopIteration:
@@ -143,7 +143,7 @@ class Type:
         output += '}\n'
         return output
 
-    def __repr__(self):
+    def __repr__(selfdec):
         return str(self)
 
 class Protocol:
@@ -248,7 +248,7 @@ class VarType(Type):
 class Context:
     def __init__(self):
         self.types: dict[str, Type] = {}
-        self.functions: dict[str, list[Method]] = {}
+        self.functions: dict[(str,int),Method] = {}
         self.protocols: dict[str, Protocol] = {}
         
     def create_type(self, name: str) -> Type:
@@ -258,25 +258,22 @@ class Context:
         self.types[name] = typex
         return typex
     
-    def register_function_name(self, name: str) -> list[Method]:
+    def register_function_name(self, name: str,nparam:int) -> list[Method]:
         """Register function name only, not its overloads"""
-        if name in self.functions:
+        if (name,nparam) in self.functions:
             raise SemanticError(f'The function name "{name}" has already been taken.')
-        self.functions[name] = []
-        return self.functions[name]
+        self.functions[name,nparam] = None
     
     def create_function(self, name: str, param_names: list[str], param_types: list[str], return_type: str):
         try:
-            functions: list[Method] = self.functions[name]
-            is_defined = any(len(param_names) == len(function.param_names) for function in functions)
-            
+            is_defined = self.functions[name,len(param_names)]
             if is_defined:
                 raise SemanticError(f'The function name "{name}" with {len(param_names)} parameters is already defined.')
             else:
-                self.functions[name].append(Method(name, param_names, param_types, return_type))
+                self.functions[name,len(param_names)] = Method(name, param_names, param_types, return_type)
         except KeyError:
 
-            self.functions[name] = [Method(name, param_names, param_types, return_type)]
+            self.functions[name,len(param_names)] = Method(name, param_names, param_types, return_type)
 
     def create_protocol(self, name: str) -> Protocol:
         if name in self.types or name in self.protocols or name in self.functions:
@@ -284,6 +281,12 @@ class Context:
         protocol = Protocol(name)
         self.protocols[name] = protocol
         return protocol
+    
+    def get_function(self,name,nparams):
+        if (name,nparams) not in self.functions:
+            raise SemanticError(f'The type "{name}" is not defined in the context.')
+        return self.functions[name,nparams]
+    
     
     def get_type(self, name: str) -> Type:
         if name not in self.types:

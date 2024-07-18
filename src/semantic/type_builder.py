@@ -30,6 +30,10 @@ class TypeBuilderVisitor:
 
         self.currentType: Type = self.context.get_type(node.identifier)
 
+        if isinstance(self.current_type, ErrorType):
+            return
+
+
         if node.base_type in ["Number", "Boolean", "String"]:
             self.errors.append(
                 SemanticError(
@@ -118,7 +122,6 @@ class TypeBuilderVisitor:
                     )
                 )
 
-
     @visitor.when(MethodNode)
     def visit(self, node: MethodNode):
         # Try to get the return type annotation
@@ -164,9 +167,15 @@ class TypeBuilderVisitor:
         # Define the method if current_type is set
         if self.current_type:
             try:
-                self.current_type.define_method(
-                    node.identifier, param_names, param_types, return_type
-                )
+                try:
+                    method = self.currentType.get_method()
+                    if isinstance(method,ErrorType):
+                        return
+                    self.currentType.methods[node.identifier,len(param_names)] = ErrorType
+                except:    
+                    self.current_type.define_method(
+                        node.identifier, param_names, param_types, return_type)
+                
             except SemanticError:
                 self.errors.append(
                     SemanticError(
@@ -216,7 +225,12 @@ class TypeBuilderVisitor:
 
         # Attempt to create or register the function in the context
         try:
-            self.context.create_function(node.identifier, param_names, param_types, return_type)
+            function = self.context.get_function(node.identifier,len(param_names))
+            if isinstance(function,ErrorType):
+                return
+            self.context.create_function(
+                node.identifier, param_names, param_types, return_type
+            )
         except SemanticError:
             self.errors.append(
                 SemanticError(
@@ -224,58 +238,40 @@ class TypeBuilderVisitor:
                 )
             )
 
-
-
-    
-    
     @visitor.when(ProtocolNode)
     def visit(self, node: ProtocolNode):
-        protocol: Protocol = self.context.get_protocol(node.identifier)
-        try:
-            extend: Protocol = self.context.get_protocol(node.superProtocol)
-        except:
-            self.errors.append(
+        protocol = self.context.get_protocol(node.identifier)
+        
+        if isinstance(self.current_type, ErrorType):
+            return
+        
+        if node.superProtocol:
+            try:
+                extend: Protocol = self.context.get_protocol(node.superProtocol)
+                ancestor = extend
+                while ancestor:
+                    if ancestor.name == self.current_type.name:
+                        self.errors.append(SemanticError(
+                            f'Circular dependency detected involving protocol "{node.identifier}" at line {node.line}.'))
+                        break
+                    ancestor = ancestor.parent
+            except:
+                self.errors.append(
                 SemanticError(
-                    f"El protocolo {node.superProtocol} extendido en el protocolo {node.identifier} no esta definido"
+                    f"El protocolo {node.superProtocol} extendido en el protocolo {node.identifier} no esta definido {node.line}"
                 )
             )
             return
-        
-        node.identifier
-        node.superProtocol
-        
-        
-        for pname,annotation_params,ptype in node.body:
+
+        for mname, (param_names, param_types), ptype in node.body:
             try:
-                protocol.define_method(
-                    dec[0],
-                    [name for (name, _) in dec[1]],
-                    [typex for (_, typex) in dec[1]],
-                    dec[0],
-                    node,
-                )
+                protocol.define_method(mname, param_names, param_types, ptype)
             except:
                 self.errors.append(
                     SemanticError(
-                        f"El metodo {dec[0]} ya esta definido con {len(dec[1])} parametros"
+                        f"El metodo {mname} ya esta definido con {protocol.methods} parametros {node.lien}"
                     )
                 )
-        ext_methods: dict[str, Method] = extend.methods
-        for ext in ext_methods:
-            try:
-                protocol.define_method(
-                    ext,
-                    ext_methods[ext].param_names,
-                    ext_methods[ext].param_types,
-                    ext_methods[ext].return_type,
-                    node,
-                )
-            except:
-                self.errors.append(
-                    SemanticError(
-                        f"El metodo {ext} ya esta definido con {len(dec[1])} parametros en el protocolo {node.identifier}"
-                    )
-                )
+            
+            
 
-
-# TODO:Terminar Protocolos

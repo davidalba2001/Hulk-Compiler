@@ -28,7 +28,7 @@ method_decl, method_inline, method_full, method_call, method_signature = Hulk_G.
 type_annotation,optional_type_annotation = Hulk_G.NonTerminals('TYPE_ANNOTATION OPTIONAL_TYPE_ANNOTATION')
 annotation_params,annotation_param = Hulk_G.NonTerminals('ANNOTATION_PARAMS ANNOTATION_PARAM')
 protocol_decl,protocol_body,extends_clause  = Hulk_G.NonTerminals('PROTOCOL_DECL PROTOCOL_BODY EXTENDS_CLAUSE')
-is_expression,as_expression = Hulk_G.NonTerminals('IS_EXPRESSION','AS_EXPRESSION')
+is_expression,as_expression = Hulk_G.NonTerminals('IS_EXPRESSION AS_EXPRESSION')
 statement_block,expression_statement = Hulk_G.NonTerminals('STATEMENT_BLOCK EXPRESSION_STATEMENT')
 vector_inst, vector_explicit, vector_implicit, vector_indexing = Hulk_G.NonTerminals('VECTOR_INST VECTOR_EXPLICIT VECTOR_IMPLICIT VECTOR_INDEXING')
 
@@ -128,10 +128,6 @@ factor %= type_inst ,lambda h,s: s[1]
 factor %= vector_indexing ,lambda h,s: s[1]
 factor %= as_expression ,lambda h,s: s[1]
 factor %= identifier , lambda h, s: IdNode(s[1],s[1,line])
-
-
-
-
 
 # Let Expression
 let_expr %= let_keyword + binding_list + in_keyword + let_body ,lambda h,s: LetNode(s[2],s[4],s[1,line])
@@ -259,7 +255,7 @@ string_expr %= string_literal,lambda h,s : StringNode(s[1],s[1,line])
  
 
 concat_string %= concat_string + at_symbol + expression ,lambda h,s : StringConcatNode(s[1],s[3],s[2,line])
-concat_string % string_expr,lambda h,s : s[1]
+concat_string %= string_expr,lambda h,s : s[1]
  
 concat_space_string %= concat_space_string + at_at_symbol + expression ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
 concat_space_string %= string_expr, lambda h,s : s[1]

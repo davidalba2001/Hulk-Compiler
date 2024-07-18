@@ -30,14 +30,16 @@ class TypeCollectorVisitor():
         try:
             self.context.create_type(node.identifier)
         except SemanticError as e:
+            self.context.types[node.identifier] = ErrorType()
             error_with_line = SemanticError(f"Error at line {node.line}: {str(e)}")
             self.errors.append(error_with_line)
         
     @visitor.when(FuncNode)
     def visit(self, node: FuncNode):
         try:
-            self.context.register_function_name(node.identifier)
+            self.context.register_function_name(node.identifier,len(node.params))
         except SemanticError as e:
+            self.context.functions[node.identifier,len(node.params)] = ErrorType()
             error_with_line = SemanticError(f"Error at line {node.line}: {str(e)}")
             self.errors.append(error_with_line)
             
@@ -46,5 +48,6 @@ class TypeCollectorVisitor():
         try:
             self.context.create_protocol(node.identifier)
         except SemanticError as e:
+            self.context.protocols[node.identifier] = ErrorType()
             error_with_line = SemanticError(f"Error at line {node.line}: {str(e)}")
             self.errors.append(error_with_line)
