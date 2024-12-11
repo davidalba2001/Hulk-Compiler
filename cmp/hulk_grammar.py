@@ -71,7 +71,7 @@ main_expression %= expression_block ,lambda h,s: s[1]
 
 # Expressions
 expression %= arithmetic_expr ,lambda h,s: s[1]
-expression %=  boolean_expr ,lambda h,s: s[1]
+expression %= boolean_expr ,lambda h,s: s[1]
 expression %= expression_block ,lambda h,s: s[1]
 expression %= let_expr ,lambda h,s: s[1]
 expression %= function_call ,lambda h,s: s[1]
@@ -295,7 +295,7 @@ annotation_params %= Hulk_G.Epsilon,lambda h,s : h[0]
 annotation_param %=  identifier + type_annotation,lambda h,s : (s[1],s[2])
 
 signatures %= signatures + method_signature,lambda h,s : [s[1]]+s[2]
-# Todo: Un protocolo puede estar vacio? : Modelado como que no
+# TODO: Un protocolo puede estar vacio? : Modelado como que no
 signatures %= method_signature,lambda h,s : s[1]
 
 method_signature %= identifier + paren_open + annotation_params + paren_close + type_annotation + semicolon,lambda h,s : (s[1],s[3],s[5])

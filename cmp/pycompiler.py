@@ -15,6 +15,8 @@ class Symbol(object):
     def __eq__(self, other):
         if isinstance(other, Symbol):
             return self.Name == other.Name
+        elif isinstance(other, str):
+            return self.Name == other
         return False
     
     def __repr__(self):
@@ -119,7 +121,7 @@ class Terminal(Symbol):
 class EOF(Terminal):
 
     def __init__(self, Grammar):
-        super().__init__('$', Grammar)
+        super().__init__('eof', Grammar)
 
 class Sentence(object):
 

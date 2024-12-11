@@ -1,0 +1,17 @@
+
+function count_when(numbers: Number, filter) {
+    (numbers is filter) > 3;
+}
+
+
+{
+    3+2+1;
+    {
+        3+1;
+        2+7-1;
+        {
+            "habla" @ "matador";
+        }
+    }
+
+}
