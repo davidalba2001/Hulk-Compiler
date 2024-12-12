@@ -1,4 +1,16 @@
 
+type Point {
+    
+    x = 5;
+    y = 6
+    
+    getX() => 5;
+    getY() => 5;
+
+    setX(x) => 5;
+    setY(y) => 5;
+}
+
 function count_when(numbers: Number, filter) {
     (numbers is filter) > 3;
 }
@@ -6,12 +18,15 @@ function count_when(numbers: Number, filter) {
 
 {
     3+2+1;
+    let a = 2 in {
+        a + 4;
+    };
     {
         3+1;
         2+7-1;
         {
             "habla" @ "matador";
         }
-    }
+    };
 
 }

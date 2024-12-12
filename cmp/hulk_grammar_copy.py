@@ -5,7 +5,7 @@ Hulk_G = Grammar()
 
 
 program = Hulk_G.NonTerminal('PROGRAM', startSymbol = True)  
-expression, expression_block, statements, main_expression ,function_decls= Hulk_G.NonTerminals('EXPRESSION EXPRESSION_BLOCK STATEMENTS MAIN_EXPRESSION FUNCTION_DECLS') 
+expression, expression_block, statements, main_expression ,function_decls, expws= Hulk_G.NonTerminals('EXPRESSION EXPRESSION_BLOCK STATEMENTS MAIN_EXPRESSION FUNCTION_DECLS EXPWS') 
 arithmetic_expr, term, exponential_term, factor = Hulk_G.NonTerminals('ARITHMETIC_EXPR TERM EXPONENTIAL_TERM FACTOR')
 function_decl, function_inline, function_full = Hulk_G.NonTerminals('FUNCTION_DECL FUNCTION_INLINE FUNCTION_FULL')  
 function_call, builtin_function_call = Hulk_G.NonTerminals('FUNCTION_CALL BUILTIN_FUNCTION_CALL')  
@@ -63,7 +63,7 @@ program %= main_expression,lambda h,s: ProgramNode(None,s[1])
 statements %= statements  + statement ,lambda h,s : list(map(lambda t: t[0] + t[1], zip(s[1],s[2])))
 statements %= statement, lambda h, s: s[1]
  
-#statement  %= type_decl, lambda h, s : ([s[1]],[],[]) 
+statement  %= type_decl, lambda h, s : ([s[1]],[],[]) 
 statement  %= function_decl, lambda h, s:([],[s[1]],[])
 #statement  %= protocol_decl, lambda h, s: ([],[],[s[1]])
 
@@ -71,16 +71,18 @@ main_expression %= expression_statement ,lambda h,s: s[1]
 
 expression_block %= brace_open + statement_block + brace_close ,lambda h,s: BlockNode(s[2])
 
+
 statement_block %= statement_block + expression_statement ,lambda h,s: s[1] + [s[2]]
 statement_block %= expression_statement ,lambda h,s: [s[1]]
 
 expression_statement %= expression + semicolon ,lambda h,s: s[1]
 expression_statement %= expression_block , lambda h, s: s[1]
+expression_statement %= expression_block + semicolon , lambda h, s: s[1]
 
 #Expressions
 expression %= string_expr ,lambda h,s: s[1]
-#expression %= let_expr ,lambda h,s: s[1]
-#expression %= dassignment ,lambda h,s: s[1]
+expression %= let_expr ,lambda h,s: s[1]
+expression %= dassignment ,lambda h,s: s[1]
 #expression %= conditional_expr ,lambda h,s: s[1]
 #expression %= while_loop ,lambda h,s: s[1]
 #expression %= for_loop ,lambda h,s: s[1]
@@ -174,33 +176,56 @@ function_full %= function_keyword + identifier + parentized_param_list + optiona
 
 param_list %= param_list  + comma + param ,lambda h,s: s[1] + [s[3]]
 param_list %= param, lambda h, s: [s[1]]
-param_list %= Hulk_G.Epsilon , lambda h,s: h[0]
+param_list %= Hulk_G.Epsilon , lambda h,s: None
 param %=  identifier + optional_type_annotation ,lambda h,s: (s[1],s[2])
 
 parentized_param_list %= paren_open + param_list + paren_close ,lambda h,s: s[2]
 
 optional_parentized_param_list %= parentized_param_list  ,lambda h,s: s[1]
-optional_parentized_param_list %= Hulk_G.Epsilon  ,lambda h,s: h[0]
-#
-#
-#
-## Type Statement
-#type_decl %= type_keyword + identifier + optional_parentized_param_list + inherits_clause + brace_open + type_body + brace_close, lambda h,s: TypeNode(s[2],s[3],s[4],s[6],s[1,line])
-#
-#inherits_clause %= inherits_keyword  + identifier + optional_parentized_argument_list ,lambda h,s : (s[1],s[2])
-#inherits_clause %= Hulk_G.Epsilon ,lambda h,s : ("Object",None) #TODO Creo que deberia ser ('object','object')
-#
-#
-#type_body %= attributes_or_methods ,lambda h,s : s[1]
-#
-#attributes_or_methods %= attributes_or_methods + attribute_or_method ,lambda h,s : list(map(lambda t: t[0] + t[1], zip(s[1],s[2])))
-#
-#attribute_or_method %= Hulk_G.Epsilon ,lambda h,s : None    
-#attribute_or_method %= assignment + semicolon ,lambda h,s : ([s[1]],[])
-#attribute_or_method %= method_decl,lambda h,s :lambda h,s : ([],[s[1]])
-#
-#method_decl %= method_inline ,lambda h,s : s[1]
-#method_decl %= method_full ,lambda h,s : s[1]
-#
-#method_inline %= identifier + parentized_param_list + optional_type_annotation + arrow + expression, lambda h,s: MethodNode(s[1],s[2],s[3],s[5],s[1,line])
-#method_full %= identifier + parentized_param_list + optional_type_annotation + expression_block, lambda h,s: MethodNode(s[1],s[2],s[3],s[4],s[1,line])
+optional_parentized_param_list %= Hulk_G.Epsilon  ,lambda h,s: []
+
+
+
+# Type Statement
+type_decl %= type_keyword + identifier + optional_parentized_param_list + inherits_clause + brace_open + type_body + brace_close, lambda h,s: TypeNode(s[2],s[3],s[4],s[6],s[1,line])
+
+
+inherits_clause %= inherits_keyword  + identifier + optional_parentized_argument_list ,lambda h,s : (s[1],s[2])
+inherits_clause %= Hulk_G.Epsilon ,lambda h,s : ("Object",None) #TODO Creo que deberia ser ('object','object')
+
+
+type_body %= attributes_or_methods ,lambda h,s : s[1]
+
+attributes_or_methods %= attributes_or_methods + attribute_or_method ,lambda h,s : list(map(lambda t: t[0] + t[1], zip(s[1],s[2]))) 
+attributes_or_methods %= Hulk_G.Epsilon ,lambda h,s : ([],[])
+   
+attribute_or_method %= assignment + semicolon ,lambda h,s : ([s[1]],[])
+#guarda los metodos en s2 de la tupla
+attribute_or_method %= method_decl, lambda h,s : ([],[s[1]])
+
+method_decl %= method_inline ,lambda h,s : s[1]
+method_decl %= method_full ,lambda h,s : s[1]
+
+method_inline %= identifier + parentized_param_list + optional_type_annotation + arrow + expression + semicolon, lambda h,s: MethodNode(s[1],s[2],s[3],s[5],s[1,line])
+method_full %= identifier + parentized_param_list + optional_type_annotation + expression_block, lambda h,s: MethodNode(s[1],s[2],s[3],s[4],s[1,line])
+
+
+# Let Expression
+let_expr %= let_keyword + binding_list + in_keyword + let_body ,lambda h,s: LetNode(s[2],s[4],s[1,line])
+
+binding_list %= binding_list + comma + binding ,lambda h,s: [s[1]] + s[3]
+binding_list %= binding ,lambda h,s: s[1]
+binding %= assignment ,lambda h,s: s[1]
+binding %= dassignment ,lambda h,s: s[1]
+
+assignment %= identifier + optional_type_annotation + assign + expression ,lambda h,s: AssignmentNode(s[1],s[2],s[4],s[3,line])
+# ? Todo: Se pudiera hacer una dassign y declarar nuevo type_annotation?
+dassignment %= identifier + dassign + expression , lambda h,s: DassignmentNode(s[1],s[3],s[2,line])
+
+type_annotation %= colon + identifier ,lambda h,s: s[2]
+
+optional_type_annotation %= type_annotation ,lambda h,s: s[1]
+optional_type_annotation %= Hulk_G.Epsilon ,lambda h,s: "Var" #Todo : Duda de si esto devuelve None pudiera modelars
+
+let_body %= expression ,lambda h,s: s[1]
+let_body %= expression_block, lambda h, s: s[1] 

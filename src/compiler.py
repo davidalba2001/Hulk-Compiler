@@ -5,15 +5,19 @@ from cmp.hulk_grammar_copy import Hulk_G
 from cmp.evaluation import evaluate_reverse_parse
 
 lexer = Lexer(Hulk.lexer_table(),'eof')
+parser = LR1Parser(Hulk_G, 'Hulk_G')
+parser._build_parsing_table()
 
 with open('src/test/test1.hulk','r') as file:
     text = file.read()
 
-tokens = lexer(text)
-print(tokens)
-parser = LR1Parser(Hulk_G, 'Hulk_G', True)
-parser._build_parsing_table()
-parse, operations = parser(tokens)
-ast = evaluate_reverse_parse(parse, operations, tokens)
-    
-print(ast)
+
+
+try:
+    tokens = lexer(text)
+    parse, operations = parser(tokens)
+    ast = evaluate_reverse_parse(parse, operations, tokens)
+except SyntaxError as error:
+    print(error)
+
+
