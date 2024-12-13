@@ -19,7 +19,7 @@ string_expr , string_atom = Hulk_G.NonTerminals('STRING_EXPR STRING_ATOM')
 conditional_expr,if_clause,elif_clauses,elif_clause,else_clause = Hulk_G.NonTerminals('CONDITIONAL_EXPR IF_CLAUSE ELIF_CLAUSES ELIF_CLAUSE ELSE_CLAUSE')
 boolean_expr,boolean_term,boolean_factor = Hulk_G.NonTerminals('BOOLEAN_EXPR BOOLEAN_TERM BOOLEAN_FACTOR')  
 relational_expr , relatable_term,relational_op= Hulk_G.NonTerminals('RELATIONAL_EXPR RELATABLE_TERM RELATIONAL_OP')  
-while_loop , for_loop = Hulk_G.NonTerminals('WHILE_LOOP FOR_LOOP')
+while_loop, while_in_line , for_loop, for_in_line  = Hulk_G.NonTerminals('WHILE_LOOP WHILE_IN_LINE FOR_LOOP FOR_IN_LINE')
 type_decl, type_body, type_inst = Hulk_G.NonTerminals('TYPE_DECL TYPE_BODY TYPE_INST')
 optional_parentized_param_list, parentized_param_list = Hulk_G.NonTerminals('OPTIONAL_PARENIZED_PARAM_LIST PARENIZED_PARAM_LIST')
 optional_parentized_argument_list,parentized_argument_list = Hulk_G.NonTerminals('OPTIONAL_PARENIZED_ARGUMENT_LIST PARENIZED_ARGUMENT_LIST')
@@ -65,7 +65,7 @@ statements %= statement, lambda h, s: s[1]
  
 statement  %= type_decl, lambda h, s : ([s[1]],[],[]) 
 statement  %= function_decl, lambda h, s:([],[s[1]],[])
-#statement  %= protocol_decl, lambda h, s: ([],[],[s[1]])
+statement  %= protocol_decl, lambda h, s: ([],[],[s[1]])
 
 main_expression %= expression_statement ,lambda h,s: s[1]
 
@@ -84,14 +84,14 @@ expression %= string_expr ,lambda h,s: s[1]
 expression %= let_expr ,lambda h,s: s[1]
 expression %= dassignment ,lambda h,s: s[1]
 #expression %= conditional_expr ,lambda h,s: s[1]
-#expression %= while_loop ,lambda h,s: s[1]
-#expression %= for_loop ,lambda h,s: s[1]
-#expression %= type_inst ,lambda h,s: s[1]
-#expression %= as_expression ,lambda h,s: s[1]
+expression %= while_loop ,lambda h,s: s[1]
+#expression %= while_in_line, lambda h, s: s[1]
+expression %= for_loop ,lambda h,s: s[1]
+#expression %= for_in_line, lambda h, s: s[1]
+expression %= type_inst ,lambda h,s: s[1]
 
 
-
-
+as_expression %= boolean_factor + as_keyword + identifier ,lambda h,s: AsNode(s[1],s[3],s[2,line])
 
 
 
@@ -99,7 +99,6 @@ expression %= dassignment ,lambda h,s: s[1]
 string_expr %= string_expr + at_symbol + string_atom,lambda h,s : StringConcatNode(s[1],s[3],s[2,line])
 string_expr %= string_expr + at_at_symbol + string_atom ,lambda h,s : StringConcatSpaceNode(s[1],s[3],s[2,line])
 string_expr %= string_atom, lambda h,s: s[1]
-#string_atom %= string_literal,lambda h,s : StringNode(s[1],s[1,line])
 string_atom %= arithmetic_expr, lambda h,s : s[1]
 
 
@@ -116,11 +115,6 @@ exponential_term %=  exponential_term + power + factor ,lambda h,s: PowerNode(s[
 exponential_term %=  factor ,lambda h,s: s[1]
 
 factor %= boolean_expr, lambda h,s: s[1]
-#factor %= number_literal ,lambda h,s:NumberNode(s[1],s[1,line])
-#factor %= constant,lambda h,s: s[1]
-#constant %= e  ,lambda h,s: ConstantNode(s[1],s[1,line])
-#constant %= pi ,lambda h,s: ConstantNode(s[1],s[1,line])
-
 
 
 
@@ -142,10 +136,10 @@ boolean_factor %= boolean_factor + is_keyword + identifier ,lambda h,s: IsNode(s
 boolean_factor %= paren_open + expression + paren_close,lambda h,s: s[2]
 boolean_factor %= true_keyword   ,lambda h,s: BooleanNode(s[1],s[1,line])
 boolean_factor %= false_keyword ,lambda h,s: BooleanNode(s[1],s[1,line])
-
-#boolean_factor %= function_call ,lambda h,s: s[1]
-#boolean_factor %= method_call ,lambda h,s: s[1]
-#boolean_factor %= vector_indexing ,lambda h,s: s[1]
+boolean_factor %= as_expression, lambda h,s: s[1]
+boolean_factor %= function_call ,lambda h,s: s[1]
+boolean_factor %= method_call ,lambda h,s: s[1]
+boolean_factor %= vector_indexing ,lambda h,s: s[1]
 boolean_factor %= identifier , lambda h, s: IdNode(s[1],s[1,line])
 
 relational_expr %= boolean_factor + less_than + boolean_factor ,lambda h,s: LessThanNode(s[1],s[3],s[2,line])
@@ -166,15 +160,14 @@ optional_type_annotation %= Hulk_G.Epsilon ,lambda h,s: "Var" #TODO : Duda de si
 
 
 
-
 # Functions Statmenets
 function_decl %= function_inline ,lambda h,s: s[1]
 function_decl %= function_full ,lambda h,s: s[1]
 
-function_inline %= function_keyword + identifier + parentized_param_list + optional_type_annotation + arrow + expression ,lambda h,s: FuncNode(s[2],s[3],s[4],s[6],s[1,line])
+function_inline %= function_keyword + identifier + parentized_param_list + optional_type_annotation + arrow + expression + semicolon ,lambda h,s: FuncNode(s[2],s[3],s[4],s[6],s[1,line])
 function_full %= function_keyword + identifier + parentized_param_list + optional_type_annotation + expression_block,lambda h,s: FuncNode(s[2],s[3],s[4],s[5],s[1,line])
 
-param_list %= param_list  + comma + param ,lambda h,s: s[1] + [s[3]]
+param_list %= param  + comma +  param_list ,lambda h,s: s[3] + [s[1]]
 param_list %= param, lambda h, s: [s[1]]
 param_list %= Hulk_G.Epsilon , lambda h,s: None
 param %=  identifier + optional_type_annotation ,lambda h,s: (s[1],s[2])
@@ -219,7 +212,7 @@ binding %= assignment ,lambda h,s: s[1]
 binding %= dassignment ,lambda h,s: s[1]
 
 assignment %= identifier + optional_type_annotation + assign + expression ,lambda h,s: AssignmentNode(s[1],s[2],s[4],s[3,line])
-# ? Todo: Se pudiera hacer una dassign y declarar nuevo type_annotation?
+#TODO: Se pudiera hacer una dassign y declarar nuevo type_annotation?
 dassignment %= identifier + dassign + expression , lambda h,s: DassignmentNode(s[1],s[3],s[2,line])
 
 type_annotation %= colon + identifier ,lambda h,s: s[2]
@@ -229,3 +222,62 @@ optional_type_annotation %= Hulk_G.Epsilon ,lambda h,s: "Var" #Todo : Duda de si
 
 let_body %= expression ,lambda h,s: s[1]
 let_body %= expression_block, lambda h, s: s[1] 
+
+
+
+# Functions Calls
+function_call %= identifier + parentized_argument_list, lambda h,s: FunctionCallNode(s[1],s[2],s[1,line])
+
+ 
+argument_list %= argument + comma + argument_list ,lambda h,s: [s[1]] + s[3]
+argument_list %= argument , lambda h,s: [s[1]]
+argument_list %= Hulk_G.Epsilon ,lambda h,s: []
+argument %= expression ,lambda h,s: s[1]
+
+optional_parentized_argument_list %= parentized_argument_list ,lambda h,s: s[1]
+optional_parentized_argument_list %= Hulk_G.Epsilon ,lambda h,s: h[0]
+
+parentized_argument_list %= paren_open + argument_list + paren_close ,lambda h,s: s[1]
+
+# Method Call Expression
+method_call %= identifier + dot + identifier + paren_open + argument_list + paren_close,lambda h,s :MethodCallNode(s[1],s[3],s[5],s[1,line])
+
+
+# Vector Instance
+vector_inst %= vector_explicit ,lambda h,s :s[1]
+vector_inst %= vector_implicit,lambda h,s :s[1]
+
+vector_explicit %= square_bracket_open + argument_list + square_bracket_close,lambda h,s : ExplicitVectorNode(s[2],s[1,line])
+vector_implicit %= square_bracket_open + expression + double_pipe + identifier + in_keyword + expression + square_bracket_close,lambda h,s :ImplicitVectorNode(s[2],s[4],s[6],s[1,line])
+
+# Vector Indexing Expression
+vector_indexing %= identifier + square_bracket_open + expression + square_bracket_close,lambda h,s : VectorIndexNode(s[1],s[3],s[1,line])
+
+# Type Instnace Expression
+type_inst %= new_keyword +  identifier + parentized_argument_list ,lambda h,s : InstanceNode(s[2],s[3],s[1,line])
+type_inst %= vector_inst ,lambda h,s: s[1]
+
+# Protocol Statement
+protocol_decl %= protocol_keyword + identifier + extends_clause + brace_open + protocol_body + brace_close,lambda h,s :ProtocolNode(s[2],s[3],s[5],s[1,line])
+protocol_body %= signatures,lambda h,s :s[1]
+
+annotation_params %= annotation_param  + comma +  annotation_params,lambda h,s : [s[1]] + s[3]
+annotation_params %= Hulk_G.Epsilon,lambda h,s : []
+annotation_param %=  identifier + type_annotation,lambda h,s : (s[1],s[2])
+
+signatures %= signatures + method_signature,lambda h,s : [s[1]]+s[2]
+# TODO: Un protocolo puede estar vacio? : Modelado como que no
+signatures %= method_signature,lambda h,s : s[1]
+
+
+method_signature %= identifier + paren_open + annotation_params + paren_close + type_annotation + semicolon,lambda h,s : (s[1],s[3],s[5])
+
+extends_clause %= extends_keyword + identifier,lambda h,s : s[2]
+extends_clause %= Hulk_G.Epsilon,lambda h,s : lambda h,s: None
+
+
+# Loop Expression
+while_loop %= while_keyword + paren_open + expression + paren_close + expression_block ,lambda h,s: WhileNode(s[3],s[5],s[1,line])
+while_in_line %= while_keyword + paren_open + expression + paren_close + expression ,lambda h,s: WhileNode(s[3],s[5],s[1,line])
+for_loop %= for_keyword + paren_open + identifier + in_keyword + expression + paren_close + expression_block ,lambda h,s: ForNode(s[3],s[5],s[7],s[1,line])
+for_in_line %= for_keyword + paren_open + identifier + in_keyword + expression + paren_close + expression ,lambda h,s: ForNode(s[3],s[5],s[7],s[1,line])

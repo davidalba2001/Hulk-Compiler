@@ -1,8 +1,7 @@
-
 type Point {
     
     x = 5;
-    y = 6
+    y = 6;
     
     getX() => 5;
     getY() => 5;
@@ -15,13 +14,29 @@ function count_when(numbers: Number, filter) {
     (numbers is filter) > 3;
 }
 
+protocol Hashable {
+    hash(): Number;
+}
+
 
 {
     3+2+1;
     let a = 2 in {
-        a + 4;
+        a + 4 as number;
     };
+
     {
+        while(true){
+            3+1;
+        };
+        for(x in range(0, 10)) 
+        {
+            sqrt(x+x);
+        };
+        yo_soy := [x || x in range(1, 2)];
+        agua := new Pinga(flacida);
+        aceite.agua(yo_soy_una_guagua);
+        yo_soy[una_guagua];
         3+1;
         2+7-1;
         {

@@ -189,7 +189,7 @@ class LR1Parser(ShiftReduceParser):
 
         for node in automaton:
             idx = node.idx
-            if(idx == 256 or idx == 68): print(idx, node)
+            if(idx == 450 or idx == 449): print(idx, node)
             for item in node.state:
                 X = item.production.Left
                 symbol = item.NextSymbol

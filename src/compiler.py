@@ -2,9 +2,30 @@ from lexer.lexer import Lexer
 from parsers.clr1_parser import LR1Parser
 from cmp.languages import Hulk
 from cmp.hulk_grammar_copy import Hulk_G
+from cmp.parsing import compute_firsts, compute_follows
 from cmp.evaluation import evaluate_reverse_parse
-
+import math
 lexer = Lexer(Hulk.lexer_table(),'eof')
+
+#first = compute_firsts(Hulk_G)
+#fw = compute_follows(Hulk_G,first)
+#
+#print("=========================================================")
+#print("=========================================================")
+#
+#for (key,value) in fw.items():
+#    if('PAREN_OPEN' in value):
+#        print(f'{key}:{value}')
+#        print("*************************************************")
+#        print("*************************************************")
+#
+#print("=========================================================")
+#print("=========================================================")
+
+
+
+
+
 parser = LR1Parser(Hulk_G, 'Hulk_G')
 parser._build_parsing_table()
 
@@ -19,5 +40,4 @@ try:
     ast = evaluate_reverse_parse(parse, operations, tokens)
 except SyntaxError as error:
     print(error)
-
 
