@@ -1,56 +1,49 @@
-try:
-    from cmp.pycompiler import Grammar
-    from cmp.utils import ContainerSet,Token
-    from cmp.exceptions import LL1GrammarException
-    import dill as pickle 
-    import os
-    print("Imports successful")
-except ImportError as e:
-    print(f"ImportError: {e}")
+
+from cmp.pycompiler import Grammar
+from cmp.utils import ContainerSet, Token
+from cmp.exceptions import LL1GrammarException
 
 
 class ShiftReduceParser:
     SHIFT = "SHIFT"
     REDUCE = "REDUCE"
     OK = "OK"
-    
-    def __init__(self,G,verbose=False):
+
+    def __init__(self, G, verbose=False):
         self.G = G
         self.verbose = verbose
-        self.action = {} 
+        self.action = {}
         self.goto = {}
 
     def _build_parsing_table(self):
         raise NotImplementedError()
 
-    def __call__(self,w,get_shift_reduce= True):
+    def __call__(self, w, get_shift_reduce=True):
         stack = [0]
         cursor = 0
         output = []
         operations = []
         isTokenList = isinstance(w, list) and all(isinstance(token, Token) for token in w)
         while True:
-            
+
             state = stack[-1]
             if isTokenList:
-                lookahead_token:Token = w[cursor]
+                lookahead_token: Token = w[cursor]
                 lookahead = lookahead_token.token_type
-            else:    
+            else:
                 lookahead = w[cursor]
             if self.verbose:
                 print(stack, "<---||--->", w[cursor:])
 
-            
             if isTokenList:
-                if (state,lookahead) not in self.action:
+                if (state, lookahead) not in self.action:
                     raise SyntaxError(
                         f"Unexpected symbol: {lookahead} at (line {lookahead_token.line}, column {lookahead_token.column})"
                     )
             else:
                 if (state, lookahead) not in self.action:
                     raise SyntaxError(f"Unexpected symbol: {lookahead}")
-                
-                
+
             action, tag = self.action[state, lookahead]
             # Your code here!!! (Shift case)
             if action == self.SHIFT:
@@ -70,7 +63,7 @@ class ShiftReduceParser:
             # Your code here!!! (OK case)
             elif action == self.OK:
                 if get_shift_reduce:
-                    return output,operations
+                    return output, operations
                 else:
                     return output
 
@@ -78,12 +71,13 @@ class ShiftReduceParser:
             else:
                 raise SyntaxError(f"Invalid action: {action}")
 
+
 def compute_local_first(firsts, alpha):
     first_alpha = ContainerSet()
 
     try:
         alpha_is_epsilon = alpha.IsEpsilon
-    except:
+    except BaseException:
         alpha_is_epsilon = False
 
     if alpha_is_epsilon:
@@ -99,6 +93,7 @@ def compute_local_first(firsts, alpha):
                 first_alpha.hard_update(firsts[symbol])
 
     return first_alpha
+
 
 def compute_firsts(G: Grammar):
     firsts = {}
@@ -131,6 +126,7 @@ def compute_firsts(G: Grammar):
 
     return firsts
 
+
 def compute_follows(G, firsts):
     follows = {}
     change = True
@@ -153,7 +149,7 @@ def compute_follows(G, firsts):
 
             for i, symbol in enumerate(alpha):
                 if symbol.IsNonTerminal:
-                    local_firsts = compute_local_first(firsts, alpha[i + 1 :])
+                    local_firsts = compute_local_first(firsts, alpha[i + 1:])
                     if not local_firsts.contains_epsilon:
                         change |= follows[symbol].update(local_firsts)
                     else:
@@ -164,6 +160,7 @@ def compute_follows(G, firsts):
             if alpha and alpha[-1].IsNonTerminal:
                 change |= follows[alpha[-1]].update(follow_X)
     return follows
+
 
 def build_parsing_table(G, firsts, follows):
     # init parsing table

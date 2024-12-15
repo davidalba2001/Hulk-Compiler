@@ -7,7 +7,7 @@ function NewEmployed(firstname,lastname)
 
 function salaryRamdom(min:Number,max)
 {
-    let vmin = min, rmax = max - min in vmin + rmax * rand()
+    let vmin = min, rmax = max - min in vmin + rmax * rand() 
 }
 
 function walk(msg) => print(msg)

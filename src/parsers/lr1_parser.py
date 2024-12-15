@@ -1,5 +1,5 @@
 import os
-from cmp.utils import ContainerSet
+from cmp.utils import ContainerSet, pprint
 from cmp.parsing import compute_firsts, compute_local_first
 from cmp.pycompiler import Item
 from cmp.parsing import ShiftReduceParser
@@ -70,8 +70,9 @@ def goto_lr1(items, symbol, firsts=None, just_kernel=False):
 
 class LR1Parser(ShiftReduceParser):
 
-    def __init__(self, G: Grammar, verbose=False):
+    def __init__(self, G: Grammar,verbose=False,debug = False):
         super().__init__(G, verbose)
+        self.debug = debug
         self.automaton = self.build_LR1_automaton(self.G.AugmentedGrammar(True))
         self.cache_or_load_tables(G.name)
 
@@ -146,12 +147,15 @@ class LR1Parser(ShiftReduceParser):
             node.idx = i
 
         for node in automaton:
-            #=======================================
-            #Note: Test  
+            
             idx = node.idx
-            if idx == 450 or idx == 449:
-                print(idx, node)
-            #=======================================
+            
+            #=================================================#
+            #    Note: Test the states using debug to true    #                              
+            if (idx == 450 or idx == 449) and self.debug:                                 
+                pprint(f">>> State : {idx}")                                  
+                pprint(node)                                
+            #=================================================#                                  
             for item in node.state:
                 X = item.production.Left
                 symbol = item.NextSymbol

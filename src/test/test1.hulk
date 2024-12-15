@@ -31,7 +31,7 @@ protocol Hashable {
         };
         for(x in range(0, 10)) 
         {
-            sqrt(x+x);
+            111SSS
         };
         yo_soy := [x || x in range(1, 2)];
         agua := new Pinga(flacida);
