@@ -21,6 +21,5 @@ def main():
         print(error)
 
 
-# Solo se ejecuta cuando este archivo se ejecuta directamente
 if __name__ == "__main__":
     main()
