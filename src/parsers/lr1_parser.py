@@ -1,3 +1,4 @@
+import cmp.ast
 import os
 from cmp.utils import ContainerSet, pprint
 from cmp.parsing import compute_firsts, compute_local_first
@@ -13,22 +14,31 @@ from utils.serialize import (
 from cmp.pycompiler import Grammar
 
 
+
 def expand(item, firsts):
+    """
+    Si el siguiente item es un Terminal entoces determina con que items de debe expandir el conjunto
+    Si el item es de la forma X → α B γ, {lookaheads} ,  entonces se expande con todos los items B → .σ  { first(γ +λ) | λ is in lookaheads}
+    """
+
     next_symbol = item.NextSymbol
     if next_symbol is None or not next_symbol.IsNonTerminal:
         return []
 
     lookaheads = ContainerSet()
+    # Actualiza el lookahead 
     for preview in item.Preview():
         lookaheads.update(compute_local_first(firsts, preview))
 
     assert not lookaheads.contains_epsilon
     productions = next_symbol.productions
 
-    return [Item(production, 0, lookaheads) for production in productions]
+    return [Item(production,0, lookaheads) for production in productions]
+
 
 
 def compress(items):
+    """Unifica los items LR(1) con un mismo item LR(0) """
     centers = {}
 
     for item in items:
@@ -37,6 +47,7 @@ def compress(items):
             lookaheads = centers[center]
         except KeyError:
             centers[center] = lookaheads = set()
+            
         lookaheads.update(item.lookaheads)
 
     return {
@@ -45,6 +56,7 @@ def compress(items):
 
 
 def closure_lr1(items, firsts):
+    """Aplica expand hasta que no se pueda expandir mas el conjunto y luego hace un compres para unifiar las producciones con el mismo centro"""
     closure = ContainerSet(*items)
 
     changed = True
@@ -61,6 +73,11 @@ def closure_lr1(items, firsts):
 
 
 def goto_lr1(items, symbol, firsts=None, just_kernel=False):
+    """
+    Retorna el conjunto de items al que se puede llegar consumiendo el simbolo,
+    si just_kernel es falso devuelve el conjunto de items clausurados,si no 
+    devuelve un item kernel 
+    """
     assert (
         just_kernel or firsts is not None
     ), "`firsts` must be provided if `just_kernel=False`"
@@ -70,7 +87,7 @@ def goto_lr1(items, symbol, firsts=None, just_kernel=False):
 
 class LR1Parser(ShiftReduceParser):
 
-    def __init__(self, G: Grammar,verbose=False,debug = False):
+    def __init__(self, G: Grammar, verbose=False, debug=False):
         super().__init__(G, verbose)
         self.debug = debug
         self.automaton = self.build_LR1_automaton(self.G.AugmentedGrammar(True))
@@ -91,12 +108,11 @@ class LR1Parser(ShiftReduceParser):
             serialize_object(self.action, action_file)
             serialize_object(self.goto, goto_file)
 
-    
     def build_LR1_automaton(self, G):
         # Aquí podemos usar `self.grammar_name` directamente para obtener el nombre
         @load_cache(f"{G.name}_lr1_automaton")  # Definir el cache con el valor de self.grammar_name
-        def internal_build_LR1_automaton(self,G):
-    
+        def internal_build_LR1_automaton(self, G):
+
             assert len(G.startSymbol.productions) == 1, "Grammar must be augmented"
 
             firsts = compute_firsts(G)
@@ -117,27 +133,26 @@ class LR1Parser(ShiftReduceParser):
                 current_state = visited[current]
 
                 for symbol in G.terminals + G.nonTerminals:
+                    
+                    kernel = goto_lr1(current_state.state, symbol, just_kernel=True)
 
-                    next_items = frozenset(goto_lr1(current_state.state, symbol, firsts))
-
-                    if not next_items:
+                    if not kernel:
                         continue
                     try:
-                        next_state = visited[next_items]
+                        next_state = visited[kernel]
                     except KeyError:
-                        visited[next_items] = State(next_items, True)
-                        pending.append(next_items)
-                        next_state = visited[next_items]
+                        next_items = frozenset(goto_lr1(current_state.state, symbol, firsts))
+                        visited[kernel] = next_state = State(next_items, True)
+                        pending.append(kernel)
+                    
 
                     current_state.add_transition(symbol.Name, next_state)
 
             automaton.set_formatter(multiline_formatter)
             return automaton
-        
-        return internal_build_LR1_automaton(self,G)
-    
-    
-    
+
+        return internal_build_LR1_automaton(self, G)
+
     def _build_parsing_table(self):
         G = self.G.AugmentedGrammar(True)
         automaton = self.automaton
@@ -147,15 +162,16 @@ class LR1Parser(ShiftReduceParser):
             node.idx = i
 
         for node in automaton:
-            
+
             idx = node.idx
-            
-            #=================================================#
-            #    Note: Test the states using debug to true    #                              
-            if (idx == 450 or idx == 449) and self.debug:                                 
-                pprint(f">>> State : {idx}")                                  
-                pprint(node)                                
-            #=================================================#                                  
+
+            # =================================================#
+            #    Note: Test the states using debug to true    #
+            if (idx == 1010 ) and self.debug:
+                pprint(f">>> State : {idx}")
+                print(i, "\t", "\n\t ".join(str(x) for x in node.state), "\n")
+                
+            # =================================================#
             for item in node.state:
                 X = item.production.Left
                 symbol = item.NextSymbol
@@ -167,15 +183,12 @@ class LR1Parser(ShiftReduceParser):
                         self._register(self.action, (idx, s), (self.REDUCE, k))
                 elif symbol.IsTerminal:
                     self._register(
-                        self.action,
-                        (idx, symbol),
-                        (self.SHIFT, node.transitions[symbol.Name][0].idx),
+                        self.action,(idx, symbol),(self.SHIFT, node.transitions[symbol.Name][0].idx),
                     )
                 else:
                     self._register(
                         self.goto, (idx, symbol), node.transitions[symbol.Name][0].idx
                     )
-                pass
 
     @staticmethod
     def _register(table, key, value):
