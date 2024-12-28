@@ -1,7 +1,6 @@
 from cmp.pycompiler import Grammar
 from cmp.hulk_ast import *
-
-Hulk_G = Grammar()
+Hulk_G = Grammar("Hulk_G")
 
 program = Hulk_G.NonTerminal('PROGRAM', startSymbol=True)
 expression, expression_block, statements, main_expression, function_decls = Hulk_G.NonTerminals(
@@ -82,17 +81,17 @@ expression %= arithmetic_expr, lambda h, s: s[1]
 expression %= boolean_expr, lambda h, s: s[1]
 expression %= expression_block, lambda h, s: s[1]
 expression %= let_expr, lambda h, s: s[1]
-expression %= function_call, lambda h, s: s[1]
-expression %= dassignment, lambda h, s: s[1]
-expression %= conditional_expr, lambda h, s: s[1]
-expression %= while_loop, lambda h, s: s[1]
-expression %= for_loop, lambda h, s: s[1]
+#expression %= function_call, lambda h, s: s[1]
+#expression %= dassignment, lambda h, s: s[1]
+#expression %= conditional_expr, lambda h, s: s[1]
+#expression %= while_loop, lambda h, s: s[1]
+#expression %= for_loop, lambda h, s: s[1]
 expression %= string_expr, lambda h, s: s[1]
-expression %= method_call, lambda h, s: s[1]
-expression %= type_inst, lambda h, s: s[1]
-expression %= vector_indexing, lambda h, s: s[1]
-expression %= as_expression, lambda h, s: s[1]
-expression %= identifier, lambda h, s: IdNode(s[1], s[1, line])
+# expression %= method_call, lambda h, s: s[1]
+# expression %= type_inst, lambda h, s: s[1]
+# expression %= vector_indexing, lambda h, s: s[1]
+# expression %= as_expression, lambda h, s: s[1]
+# expression %= identifier, lambda h, s: IdNode(s[1], s[1, line])
 
 as_expression %= expression + as_keyword + identifier, lambda h, s: AsNode(s[1], s[3], s[2, line])
 # Expression Block
@@ -115,27 +114,48 @@ term %= exponential_term, lambda h, s: s[1]
 exponential_term %= factor + power + exponential_term, lambda h, s: PowerNode(s[1], s[3], s[2, line])
 exponential_term %= factor, lambda h, s: s[1]
 
-factor %= paren_open + arithmetic_expr + paren_close, lambda h, s: s[2]
-factor %= number_literal, lambda h, s: NumberNode(s[1], s[1, line])
-factor %= constant, lambda h, s: s[1]
-constant %= e, lambda h, s: ConstantNode(s[1], s[1, line])
-constant %= pi, lambda h, s: ConstantNode(s[1], s[1, line])
-
-
 factor %= boolean_expr, lambda h, s: s[1]
-factor %= expression_block, lambda h, s: s[1]
-factor %= let_expr, lambda h, s: s[1]
-factor %= function_call, lambda h, s: s[1]
-factor %= dassignment, lambda h, s: s[1]
-factor %= conditional_expr, lambda h, s: s[1]
-factor %= while_loop, lambda h, s: s[1]
-factor %= for_loop, lambda h, s: s[1]
-factor %= string_expr, lambda h, s: s[1]
-factor %= method_call, lambda h, s: s[1]
-factor %= type_inst, lambda h, s: s[1]
-factor %= vector_indexing, lambda h, s: s[1]
-factor %= as_expression, lambda h, s: s[1]
-factor %= identifier, lambda h, s: IdNode(s[1], s[1, line])
+
+# Boolean Expression
+boolean_expr %= boolean_expr + or_op + boolean_term, lambda h, s: OrNode(s[1], s[3], s[2, line])
+boolean_expr %= boolean_term, lambda h, s: s[1]
+
+boolean_term %= boolean_term + and_op + boolean_factor, lambda h, s: AndNode(s[1], s[3], s[2, line])
+boolean_term %= boolean_factor, lambda h, s: s[1]
+
+boolean_factor %= is_expression, lambda h, s: s[1]
+boolean_factor %= not_op + boolean_factor, lambda h, s: NotNode(s[2], s[1, line])
+boolean_factor %= paren_open + boolean_expr + paren_close, lambda h, s: s[2]
+boolean_factor %= relational_expr, lambda h, s: s[1]
+boolean_factor %= true_keyword, lambda h, s: BooleanNode(s[1], s[1, line])
+boolean_factor %= false_keyword, lambda h, s: BooleanNode(s[1], s[1, line])
+
+is_expression %= expression + is_keyword + identifier, lambda h, s: IsNode(s[1], s[3], s[2, line])
+
+relational_expr %= relational_expr + less_than + relatable_term, lambda h, s: LessThanNode(s[1], s[3], s[2, line])
+relational_expr %= relational_expr + greater_than + relatable_term, lambda h, s: GreaterThanNode(s[1], s[3], s[2, line])
+relational_expr %= relational_expr + less_equal + relatable_term, lambda h, s: LessEqualNode(s[1], s[3], s[2, line])
+relational_expr %= relational_expr + greater_equal + relatable_term, lambda h, s: GreaterEqualNode(s[1], s[3], s[2, line])
+relational_expr %= relational_expr + equal + relatable_term, lambda h, s: EqualNode(s[1], s[3], s[2, line])
+relational_expr %= relational_expr + not_equal + relatable_term, lambda h, s: NotEqualNode(s[1], s[3], s[2, line])
+relational_expr %= relatable_term, lambda h, s: s[1]
+
+
+relatable_term %= expression_block, lambda h, s: s[1]
+relatable_term %= let_expr, lambda h, s: s[1]
+relatable_term %= function_call, lambda h, s: s[1]
+relatable_term %= dassignment, lambda h, s: s[1]
+relatable_term %= conditional_expr, lambda h, s: s[1]
+relatable_term %= while_loop, lambda h, s: s[1]
+relatable_term %= for_loop, lambda h, s: s[1]
+relatable_term %= string_expr, lambda h, s: s[1]
+relatable_term %= method_call, lambda h, s: s[1]
+relatable_term %= type_inst, lambda h, s: s[1]
+relatable_term %= vector_indexing, lambda h, s: s[1]
+relatable_term %= as_expression, lambda h, s: s[1]
+relatable_term %= identifier, lambda h, s: IdNode(s[1], s[1, line])
+relatable_term %= paren_open + arithmetic_expr + paren_close, lambda h, s: s[2]
+relatable_term %= number_literal, lambda h, s: NumberNode(s[1], s[1, line])
 
 # Let Expression
 let_expr %= let_keyword + binding_list + in_keyword + let_body, lambda h, s: LetNode(s[2], s[4], s[1, line])
@@ -197,59 +217,22 @@ builtin_function_call %= log_keyword + paren_open + expression + comma + \
     expression + paren_close, lambda h, s: LogNode([s[3]] + s[5], s[1, line])
 builtin_function_call %= print_keyword + paren_open + expression + paren_close, lambda h, s: PrintNode(s[3], s[1, line])
 
-# Boolean Expression
-boolean_expr %= boolean_expr + or_op + boolean_term, lambda h, s: OrNode(s[1], s[3], s[2, line])
-boolean_expr %= boolean_term, lambda h, s: s[1]
-
-boolean_term %= boolean_term + and_op + boolean_factor, lambda h, s: AndNode(s[1], s[3], s[2, line])
-boolean_term %= boolean_factor, lambda h, s: s[1]
-
-boolean_factor %= is_expression, lambda h, s: s[1]
-boolean_factor %= not_op + boolean_factor, lambda h, s: NotNode(s[2], s[1, line])
-boolean_factor %= paren_open + boolean_expr + paren_close, lambda h, s: s[2]
-boolean_factor %= relational_expr, lambda h, s: s[1]
-boolean_factor %= true_keyword, lambda h, s: BooleanNode(s[1], s[1, line])
-boolean_factor %= false_keyword, lambda h, s: BooleanNode(s[1], s[1, line])
-
-is_expression %= expression + is_keyword + identifier, lambda h, s: IsNode(s[1], s[3], s[2, line])
-
-relational_expr %= relational_expr + less_than + relatable_term, lambda h, s: LessThanNode(s[1], s[3], s[2, line])
-relational_expr %= relational_expr + greater_than + relatable_term, lambda h, s: GreaterThanNode(s[1], s[3], s[2, line])
-relational_expr %= relational_expr + less_equal + relatable_term, lambda h, s: LessEqualNode(s[1], s[3], s[2, line])
-relational_expr %= relational_expr + greater_equal + relatable_term, lambda h, s: GreaterEqualNode(s[1], s[3], s[2, line])
-relational_expr %= relational_expr + equal + relatable_term, lambda h, s: EqualNode(s[1], s[3], s[2, line])
-relational_expr %= relational_expr + not_equal + relatable_term, lambda h, s: NotEqualNode(s[1], s[3], s[2, line])
-relational_expr %= relatable_term, lambda h, s: s[1]
 
 
-relatable_term %= arithmetic_expr, lambda h, s: s[1]
-relatable_term %= expression_block, lambda h, s: s[1]
-relatable_term %= let_expr, lambda h, s: s[1]
-relatable_term %= function_call, lambda h, s: s[1]
-relatable_term %= dassignment, lambda h, s: s[1]
-relatable_term %= conditional_expr, lambda h, s: s[1]
-relatable_term %= while_loop, lambda h, s: s[1]
-relatable_term %= for_loop, lambda h, s: s[1]
-relatable_term %= string_expr, lambda h, s: s[1]
-relatable_term %= method_call, lambda h, s: s[1]
-relatable_term %= type_inst, lambda h, s: s[1]
-relatable_term %= vector_indexing, lambda h, s: s[1]
-relatable_term %= as_expression, lambda h, s: s[1]
-relatable_term %= identifier, lambda h, s: IdNode(s[1], s[1, line])
+#===============================================================================================================================#
+#                                             Conditional Expression 🆗                                                         #
+conditional_expr %= if_clause + elif_clauses + else_clause, lambda h, s: IfNode(s[1][0], s[1][1], s[2], s[3], s[1][2])          #                                                                                                                          
+                                                                                                                                #
+if_clause %= if_keyword + paren_open + expression + paren_close + expression, lambda h, s: (s[3], s[5], s[1, line])             #                                                                                                                        
+                                                                                                                                #
+elif_clauses %= elif_clauses + elif_clause, lambda h, s: [s[1]] + s[2]                                                          #                                                                            
+elif_clauses %= Hulk_G.Epsilon, lambda h, s: h[0]                                                                               #                                                        
+                                                                                                                                #
+elif_clause %= elif_keyword + paren_open + expression + paren_close + expression, lambda h, s: ElifNode(s[3], s[5], s[1, line]) #                                                                                                                                    
+                                                                                                                                #
+else_clause %= else_keyword + expression, lambda h, s: ElseNode(s[2], s[1, line])                                               #                                                                                        
+#===============================================================================================================================#                                                                                                                               
 
-
-# Conditional Expression
-conditional_expr %= if_clause + elif_clauses + else_clause, lambda h, s: IfNode(s[1][0], s[1][1], s[2], s[3], s[1][2])
-
-if_clause %= if_keyword + paren_open + expression + paren_close + expression, lambda h, s: (s[3], s[5], s[1, line])
-
-elif_clauses %= elif_clauses + elif_clause, lambda h, s: [s[1]] + s[2]
-elif_clauses %= Hulk_G.Epsilon, lambda h, s: h[0]
-
-elif_clause %= elif_keyword + paren_open + expression + paren_close + expression, lambda h, s: ElifNode(s[3], s[5], s[1, line])
-
-else_clause %= else_keyword + expression, lambda h, s: ElseNode(s[2], s[1, line])
-else_clause %= Hulk_G.Epsilon, lambda h, s: h[0]
 
 # Loop Expression
 while_loop %= while_keyword + paren_open + expression + paren_close + expression, lambda h, s: WhileNode(s[3], s[5], s[1, line])
