@@ -1,16 +1,15 @@
 from lexer.lexer import Lexer
 from parsers.lr1_parser import LR1Parser
-from cmp.languages import Hulk
+from cmp.languages import HulkLang
 from cmp.hulk_grammar_copy import Hulk_G
 from cmp.evaluation import evaluate_reverse_parse
 
 
 def main():
-    lexer = Lexer(Hulk.lexer_table(), "eof")
-    parser = LR1Parser(Hulk_G)
-    parser._build_parsing_table()
+    lexer = Lexer(HulkLang.lexer_table(), "eof")
+    parser = LR1Parser(Hulk_G, debug=True)
 
-    with open("src/test/test1.hulk", "r") as file:
+    with open("src/tests/test.hulk", "r") as file:
         text = file.read()
 
     try:
