@@ -76,13 +76,13 @@ statement %= protocol_decl, lambda h, s: ([], [], [s[1]])
 
 main_expression %= expression_statement, lambda h, s: s[1]
 
-
 statement_block %= statement_block + expression_statement, lambda h, s: s[1] + [s[2]]
 statement_block %= expression_statement, lambda h, s: [s[1]]
 
 expression_statement %= expression + semicolon, lambda h, s: s[1]
 expression_statement %= expression_block, lambda h, s: s[1]
-expression_statement %= expression_block + semicolon, lambda h, s: s[1]
+# expression_statement %= expression_block + semicolon, lambda h, s: s[1]
+
 expression_block %= brace_open + statement_block + brace_close, lambda h, s: BlockNode(s[2])
 
 # Expressions
@@ -95,6 +95,7 @@ expression %= while_in_line, lambda h, s: s[1]
 expression %= for_loop, lambda h, s: s[1]
 expression %= for_in_line, lambda h, s: s[1]
 expression %= type_inst, lambda h, s: s[1]
+expression %= expression_block,lambda h, s: s[1]
 
 
 as_expression %= boolean_factor + as_keyword + identifier, lambda h, s: AsNode(s[1], s[3], s[2, line])
@@ -225,8 +226,6 @@ optional_type_annotation %= type_annotation, lambda h, s: s[1]
 optional_type_annotation %= Hulk_G.Epsilon, lambda h, s: "Var"  # Todo : Duda de si esto devuelve None pudiera modelars
 
 let_body %= expression, lambda h, s: s[1]
-let_body %= expression_block, lambda h, s: s[1]
-
 
 # Functions Calls
 function_call %= identifier + parentized_argument_list, lambda h, s: FunctionCallNode(s[1], s[2], s[1, line])
@@ -278,14 +277,13 @@ extends_clause %= Hulk_G.Epsilon, lambda h, s: lambda h, s: None
 
 
 # Loop Expression
-while_loop %= while_keyword + paren_open + expression + paren_close + expression_block, lambda h, s: WhileNode(s[3], s[5], s[1, line])
-while_in_line %= while_keyword + paren_open + expression + paren_close + expression, lambda h, s: WhileNode(s[3], s[5], s[1, line])
+while_loop %= while_keyword + paren_open + expression + paren_close + expression, lambda h, s: WhileNode(s[3], s[5], s[1, line])
+
+# for_loop %= for_keyword + paren_open + identifier + in_keyword + expression + \
+#     paren_close + expression_block, lambda h, s: ForNode(s[3], s[5], s[7], s[1, line])
+
 
 for_loop %= for_keyword + paren_open + identifier + in_keyword + expression + \
-    paren_close + expression_block, lambda h, s: ForNode(s[3], s[5], s[7], s[1, line])
-
-
-for_in_line %= for_keyword + paren_open + identifier + in_keyword + expression + \
     paren_close + expression, lambda h, s: ForNode(s[3], s[5], s[7], s[1, line])
 
 

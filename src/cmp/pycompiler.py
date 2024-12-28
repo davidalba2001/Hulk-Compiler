@@ -497,20 +497,27 @@ class Item:
 
     @property
     def NextSymbol(self):
+        """ returns the next symbol after the point """
         if self.pos < len(self.production.Right):
             return self.production.Right[self.pos]
         else:
             return None
 
     def NextItem(self):
+        """ returns the next item, moving the point one position """
         if self.pos < len(self.production.Right):
             return Item(self.production,self.pos+1,self.lookaheads)
         else:
             return None
 
     def Preview(self, skip=1):
+        """
+         returns a set of strings that can appear after consuming the symbol after the dot 
+         (If  Item(X -> a.Bc,lookaheads), returns the set { c+l | l is in lookahead})                     
+        """
         unseen = self.production.Right[self.pos+skip:]
         return [ unseen + (lookahead,) for lookahead in self.lookaheads ]
 
     def Center(self):
+        """returns LR(0) Item ,  that is, the item without the lookaheads """
         return Item(self.production, self.pos)

@@ -1,5 +1,6 @@
 from cmp.pycompiler import Production, Sentence, Symbol, EOF, Epsilon
 
+
 class ContainerSet:
     def __init__(self, *values, contains_epsilon=False):
         self.set = set(values)
@@ -58,15 +59,16 @@ class ContainerSet:
             return self.set == other
         return isinstance(other, ContainerSet) and self.set == other.set and self.contains_epsilon == other.contains_epsilon
 
+
 def inspect(item, grammar_name='G', mapper=None):
     try:
         return mapper[item]
-    except (TypeError, KeyError ):
+    except (TypeError, KeyError):
         if isinstance(item, dict):
-            items = ',\n   '.join(f'{inspect(key, grammar_name, mapper)}: {inspect(value, grammar_name, mapper)}' for key, value in item.items() )
+            items = ',\n   '.join(f'{inspect(key, grammar_name, mapper)}: {inspect(value, grammar_name, mapper)}' for key, value in item.items())
             return f'{{\n   {items} \n}}'
         elif isinstance(item, ContainerSet):
-            args = f'{ ", ".join(inspect(x, grammar_name, mapper) for x in item.set) } ,' if item.set else ''
+            args = f'{", ".join(inspect(x, grammar_name, mapper) for x in item.set)} ,' if item.set else ''
             return f'ContainerSet({args} contains_epsilon={item.contains_epsilon})'
         elif isinstance(item, EOF):
             return f'{grammar_name}.EOF'
@@ -82,10 +84,11 @@ def inspect(item, grammar_name='G', mapper=None):
             right = inspect(item.Right, grammar_name, mapper)
             return f'Production({left}, {right})'
         elif isinstance(item, tuple) or isinstance(item, list):
-            ctor = ('(', ')') if isinstance(item, tuple) else ('[',']')
+            ctor = ('(', ')') if isinstance(item, tuple) else ('[', ']')
             return f'{ctor[0]} {("%s, " * len(item)) % tuple(inspect(x, grammar_name, mapper) for x in item)}{ctor[1]}'
         else:
             raise ValueError(f'Invalid: {item}')
+
 
 def pprint(item, header=""):
     if header:
@@ -102,34 +105,66 @@ def pprint(item, header=""):
     else:
         print(item)
 
+
 class Token:
+    def __init__(self, lex, ttype, line=None, column=None, index=None):
+        """
+        Inicializa un token con sus propiedades básicas.
+        :param lex: El lexema del token.
+        :param tytype: El tipo de token.
+        :param line: Línea donde se encontró el token.
+        :param column: Columna donde se encontró el token.
+        :param index: Índice único del token en la lista de tokens.
+        """
+        self.lex = lex  # Lexema del token
+        self.ttype = ttype  # Tipo de token
+        self.line = line  # Línea del token
+        self.column = column  # Columna del token
+        self.index = index  # Índice del token en la lista
 
-    def __init__(self, lex,token_type,line = None,column = None):
-        self.lex = lex
-        self.token_type = token_type
-        self.column = column
-        self.line = line
-
-    def __str__(self):        
-        return f'{self.token_type}: {self.lex}'
+    def __str__(self):
+        return f"Token: {self.ttype} ({self.lex}) at line {self.line}, column {self.column}"
 
     def __repr__(self):
-        return str(self)
+        return f"Token(index={self.index}, ttype={self.ttype}, lexema='{self.lex}', line={self.line}, column={self.column})"
 
     @property
     def is_valid(self):
+        """
+        Verifica si el token es válido.
+        :return: True para tokens válidos.
+        """
         return True
 
-class UnknownToken(Token):
-    def __init__(self, lex):
-        Token.__init__(self, lex, None)
 
-    def transform_to(self, token_type):
-        return Token(self.lex, token_type)
+class UnknownToken(Token):
+    def __init__(self, lex, line=None, column=None, index=None):
+        """
+        Inicializa un token desconocido con propiedades específicas.
+        :param lex: El lexema del token.
+        :param type: Tipo de token (por defecto "Unknown").
+        :param line: Línea donde se encontró el token.
+        :param column: Columna donde se encontró el token.
+        :param index: Índice único del token en la lista.
+        """
+        super().__init__(lex, ttype="Unknown", line=line, column=column, index=index)
+
+    def transform_to(self, ttype):
+        """
+        Transforma el token desconocido en un token válido con un tipo específico.
+        :param ttype: El tipo de token al que se transformará.
+        :return: Una instancia de Token con el nuevo tipo.
+        """
+        return Token(self.lex, ttype, self.line, self.column, self.index)
 
     @property
     def is_valid(self):
+        """
+        Verifica si el token es válido.
+        :return: False ya que es un token no válido.
+        """
         return False
+
 
 def tokenizer(G, fixed_tokens):
     def decorate(func):
@@ -156,9 +191,10 @@ def tokenizer(G, fixed_tokens):
             raise TypeError('Argument must be "str" or a callable object.')
     return decorate
 
+
 class DisjointSet:
     def __init__(self, *items):
-        self.nodes = { x: DisjointNode(x) for x in items }
+        self.nodes = {x: DisjointNode(x) for x in items}
 
     def merge(self, items):
         items = (self.nodes[x] for x in items)
@@ -168,17 +204,16 @@ class DisjointSet:
                 head.merge(other)
         except ValueError:
             pass
-    
-    def find(self,item):
+
+    def find(self, item):
         if isinstance(item, list):
             item = item[0]
         return self.nodes[item].representative.value
-    
+
     @property
     def representatives(self):
-        return { n.representative for n in self.nodes.values() }
-    
-    
+        return {n.representative for n in self.nodes.values()}
+
     @property
     def groups(self):
         return [[n for n in self.nodes.values() if n.representative == r] for r in self.representatives]
@@ -194,6 +229,7 @@ class DisjointSet:
 
     def __repr__(self):
         return str(self)
+
 
 class DisjointNode:
     def __init__(self, value):

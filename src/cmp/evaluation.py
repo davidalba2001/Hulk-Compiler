@@ -39,7 +39,6 @@ class TokenList(list):
     def __repr__(self):
         return f"TokenList({super().__repr__()})"
 
-
 def evaluate_reverse_parse(right_parse, operations, tokens):
     if not right_parse or not operations or not tokens:
         return
@@ -71,10 +70,9 @@ def evaluate_reverse_parse(right_parse, operations, tokens):
 
     assert len(stack) == 1
     toke = next(tokens)
-    token_type = toke.token_type
+    token_type = toke.ttype
     assert token_type == "eof"
     return stack[0]
-
 
 def evaluate_parse(left_parse, tokens):
     if not left_parse or not tokens:
@@ -86,7 +84,6 @@ def evaluate_parse(left_parse, tokens):
 
     assert isinstance(next(tokens).token_type, EOF)
     return result
-
 
 def _evaluate(production, left_parse, tokens, inherited_value=None):
     head, body = production

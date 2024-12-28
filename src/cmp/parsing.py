@@ -1,4 +1,3 @@
-
 from cmp.pycompiler import Grammar
 from cmp.utils import ContainerSet, Token
 from cmp.exceptions import LL1GrammarException
@@ -29,11 +28,12 @@ class ShiftReduceParser:
             state = stack[-1]
             if isTokenList:
                 lookahead_token: Token = w[cursor]
-                lookahead = lookahead_token.token_type
+                lookahead = lookahead_token.ttype
             else:
                 lookahead = w[cursor]
             if self.verbose:
-                print(stack, "<---||--->", w[cursor:])
+                print("\n\n =========================================================")
+                print(stack, "<---||--->", w[cursor:cursor+10])
 
             if isTokenList:
                 if (state, lookahead) not in self.action:
@@ -71,7 +71,6 @@ class ShiftReduceParser:
             else:
                 raise SyntaxError(f"Invalid action: {action}")
 
-
 def compute_local_first(firsts, alpha):
     first_alpha = ContainerSet()
 
@@ -93,7 +92,6 @@ def compute_local_first(firsts, alpha):
                 first_alpha.hard_update(firsts[symbol])
 
     return first_alpha
-
 
 def compute_firsts(G: Grammar):
     firsts = {}
@@ -125,7 +123,6 @@ def compute_firsts(G: Grammar):
             change |= first_X.hard_update(local_first)
 
     return firsts
-
 
 def compute_follows(G, firsts):
     follows = {}
@@ -161,7 +158,6 @@ def compute_follows(G, firsts):
                 change |= follows[alpha[-1]].update(follow_X)
     return follows
 
-
 def build_parsing_table(G, firsts, follows):
     # init parsing table
     M = {}
@@ -192,3 +188,6 @@ def build_parsing_table(G, firsts, follows):
                 M[X, term] = [production]
 
     return M
+
+
+

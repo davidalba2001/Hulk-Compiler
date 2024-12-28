@@ -90,9 +90,9 @@ class UnaryNode(ExpressionNode):
 
 
 class ConditionalNode(ExpressionNode):
-    def __init__(self, branch, line=None, ntype="CONDITIONAL"):
+    def __init__(self,body, line=None, ntype="CONDITIONAL"):
         super().__init__(line, ntype)
-        self.branch = branch
+        self.body = body
 
 
 class BindingNode(ExpressionNode):
@@ -293,23 +293,23 @@ class PrintNode(FunctionCallNode):
 
 class IfNode(ConditionalNode):
     def __init__(
-        self, condition, branch, elif_nodes, false_branch, line=None, ntype="If"
+        self, if_condition,if_body, elif_nodes = None, else_body = None, line=None, ntype="If"
     ):
-        super().__init__(branch, line, ntype)
-        self.condition = condition
+        super().__init__(if_body,line, ntype)
+        self.if_condition = if_condition
         self.elif_nodes = elif_nodes if elif_nodes else []
-        self.false_branch = false_branch
+        self.else_body = else_body
 
 
 class ElifNode(ConditionalNode):
-    def __init__(self, condition, branch, line=None, ntype="ELIF"):
-        super().__init__(branch, line, ntype)
+    def __init__(self, condition,body, line=None, ntype="ELIF"):
+        super().__init__(body, line, ntype)
         self.condition = condition
 
 
 class ElseNode(ConditionalNode):
-    def __init__(self, branch, line=None, ntype="ELSE"):
-        super().__init__(branch, line, ntype)
+    def __init__(self,body, line=None, ntype="ELSE"):
+        super().__init__(body,line, ntype)
 
 
 class PlusNode(BinaryNode):

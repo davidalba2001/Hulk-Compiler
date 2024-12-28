@@ -1,4 +1,4 @@
-import cmp.ast
+
 import os
 from cmp.utils import ContainerSet, pprint
 from cmp.parsing import compute_firsts, compute_local_first
@@ -14,7 +14,6 @@ from utils.serialize import (
 from cmp.pycompiler import Grammar
 
 
-
 def expand(item, firsts):
     """
     Si el siguiente item es un Terminal entoces determina con que items de debe expandir el conjunto
@@ -26,15 +25,14 @@ def expand(item, firsts):
         return []
 
     lookaheads = ContainerSet()
-    # Actualiza el lookahead 
+    # Actualiza el lookahead
     for preview in item.Preview():
         lookaheads.update(compute_local_first(firsts, preview))
 
     assert not lookaheads.contains_epsilon
     productions = next_symbol.productions
 
-    return [Item(production,0, lookaheads) for production in productions]
-
+    return [Item(production, 0, lookaheads) for production in productions]
 
 
 def compress(items):
@@ -47,7 +45,7 @@ def compress(items):
             lookaheads = centers[center]
         except KeyError:
             centers[center] = lookaheads = set()
-            
+
         lookaheads.update(item.lookaheads)
 
     return {
@@ -75,8 +73,8 @@ def closure_lr1(items, firsts):
 def goto_lr1(items, symbol, firsts=None, just_kernel=False):
     """
     Retorna el conjunto de items al que se puede llegar consumiendo el simbolo,
-    si just_kernel es falso devuelve el conjunto de items clausurados,si no 
-    devuelve un item kernel 
+    si just_kernel es falso devuelve el conjunto de items clausurados,si no
+    devuelve un item kernel
     """
     assert (
         just_kernel or firsts is not None
@@ -133,7 +131,7 @@ class LR1Parser(ShiftReduceParser):
                 current_state = visited[current]
 
                 for symbol in G.terminals + G.nonTerminals:
-                    
+
                     kernel = goto_lr1(current_state.state, symbol, just_kernel=True)
 
                     if not kernel:
@@ -144,7 +142,6 @@ class LR1Parser(ShiftReduceParser):
                         next_items = frozenset(goto_lr1(current_state.state, symbol, firsts))
                         visited[kernel] = next_state = State(next_items, True)
                         pending.append(kernel)
-                    
 
                     current_state.add_transition(symbol.Name, next_state)
 
@@ -165,34 +162,54 @@ class LR1Parser(ShiftReduceParser):
 
             idx = node.idx
 
-            # =================================================#
-            #    Note: Test the states using debug to true    #
-            if (idx == 1010 ) and self.debug:
-                pprint(f">>> State : {idx}")
-                print(i, "\t", "\n\t ".join(str(x) for x in node.state), "\n")
-                
-            # =================================================#
             for item in node.state:
                 X = item.production.Left
                 symbol = item.NextSymbol
                 if X == G.startSymbol and item.IsReduceItem:
-                    self._register(self.action, (idx, G.EOF), (self.OK, 0))
-                elif item.IsReduceItem:
+                    self._register(self.action, (idx, G.EOF), (self.OK, 0), node.state, self.debug)
+                elif item.IsReduceItem:  # Que el puntico este al final
                     k = self.G.Productions.index(item.production)
-                    for s in item.lookaheads:
-                        self._register(self.action, (idx, s), (self.REDUCE, k))
-                elif symbol.IsTerminal:
+                    for s in item.lookaheads:  # Si esta al final entonces escribe reduce en en todos los simbolos del lookaheads
+                        self._register(self.action, (idx, s), (self.REDUCE, k), node.state, self.debug)
+                elif symbol.IsTerminal:  # Si detras del punto viene un terminal entonces se hace shift
+                    self._register(self.action, (idx, symbol), (self.SHIFT, node.transitions[symbol.Name][0].idx), node.state, self.debug)
+                else:  # Si detras del punto es un no terminal se hace un Goto
                     self._register(
-                        self.action,(idx, symbol),(self.SHIFT, node.transitions[symbol.Name][0].idx),
-                    )
-                else:
-                    self._register(
-                        self.goto, (idx, symbol), node.transitions[symbol.Name][0].idx
+                        self.goto, (idx, symbol), node.transitions[symbol.Name][0].idx, node.state, self.debug
                     )
 
     @staticmethod
-    def _register(table, key, value):
-        assert (
-            key not in table or table[key] == value
-        ), "Shift-Reduce or Reduce-Reduce conflict!!!"
+    def _register(table, key, value, state=None, debug=False):
+        if key in table and table[key] != value:
+            if (state is None):
+                raise AssertionError("Shift-Reduce or Reduce-Reduce conflict!!!")
+            raise AssertionError(LR1Parser.identify_conflicts(state,key[1], debug))
         table[key] = value
+
+    @staticmethod
+    def identify_conflicts(state: State, symbol, debug=False):
+        conflicts_items = [item for item in state if item.IsReduceItem or item.NextSymbol == symbol]
+
+        reduce_items = [item for item in conflicts_items if item.IsReduceItem]
+        shift_items = [item for item in conflicts_items if item.NextSymbol == symbol]
+
+        if len(reduce_items) > 1:
+            if debug:
+                print("Conflict Details:")
+                print("Reduce Items:")
+                for item in reduce_items:
+                    print(f"  - {item}")  # Asumiendo que `item` tiene un método __str__ o similar
+            return "Reduce-Reduce conflict!!!"
+
+        if len(shift_items) > 0 and len(reduce_items) > 0:
+            if debug:
+                print("Conflict Details:")
+                print("Shift Items:")
+                for item in shift_items:
+                    print(f" ▶️ {item}")  # Asumiendo que `item` tiene un método __str__ o similar
+                print("Reduce Items:")
+                for item in reduce_items:
+                    print(f" ▶️ {item}")
+            return "Shift-Reduce conflict!!!"
+
+        return "No conflict detected."
