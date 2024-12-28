@@ -1,1 +1,4 @@
-1213424124
+function tan(x) => sin(x) / cos(x);
+function cot(x) => 1 / tan(x);
+function square(x) => x * x;
+print(tan(PI) ^ 2 + cot(PI) ^ 2);
