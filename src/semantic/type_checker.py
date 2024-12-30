@@ -10,6 +10,7 @@ class TypeCheckerVisitor():
         self.scope: Scope = scope
         self.errors: List[str] = errors
         self.currentType: Type = None
+    
     @visitor.on('node')
     def visit(self, node, tabs):
         pass

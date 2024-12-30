@@ -1,7 +1,7 @@
 from lexer.lexer import Lexer
 from parsers.lr1_parser import LR1Parser
 from cmp.languages import HulkLang
-from cmp.hulk_grammar_copy import Hulk_G
+from cmp.hulk_grammar import Hulk_G
 from cmp.evaluation import evaluate_reverse_parse
 
 
