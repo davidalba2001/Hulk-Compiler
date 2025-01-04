@@ -5,20 +5,21 @@ from cmp.utils import Token
 
 class TokenList(list):
     def __getitem__(self, index):
-        if isinstance(index, tuple):
+        
+        # Si index es de la forma index , atributo el token , para poder decir s[1,line]
+        if isinstance(index,tuple):
             idx, attr = index
             item = super().__getitem__(idx)
-            if isinstance(item, Token) and attr in [
-                "line",
-                "column",
-                "lex",
-                "token_type",
-            ]:
+            if isinstance(item, Token) and attr in ["line","column","lex","token_type",]:
                 return getattr(item, attr)
+            if isinstance(item, Token) and attr in ["token"]:
+                return item
+            
             raise AttributeError(
                 f"{type(item).__name__} object has no attribute '{attr}'"
             )
-        elif isinstance(index, slice):
+            
+        elif isinstance(index,slice):
             return TokenList(super().__getitem__(index))
         else:
             item = super().__getitem__(index)
@@ -38,6 +39,7 @@ class TokenList(list):
 
     def __repr__(self):
         return f"TokenList({super().__repr__()})"
+
 
 def evaluate_reverse_parse(right_parse, operations, tokens):
     if not right_parse or not operations or not tokens:
