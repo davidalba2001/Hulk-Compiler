@@ -91,18 +91,10 @@
                                                 │
                                                 └── TypeNode()
 
-
-
-
-
-
-
-
 """
-from cmp.utils import Token
-from typing import List, Optional, Union, Tuple, Dict, Any, str
 from __future__ import annotations
-
+from cmp.utils import Token
+from typing import List, Optional, Union, Tuple, Dict, Any
 
 class Node:
     def __init__(
@@ -154,7 +146,7 @@ class CallableNode(StatementNode):
     def __init__(
         self,
         identifier: str,
-        params: Dict[str, str],
+        params: List[Tuple[str, str]],
         return_type_annotation: str,
         body: Union[ExpressionNode, BlockNode],
         token: Optional[Token] = None,
@@ -165,7 +157,7 @@ class CallableNode(StatementNode):
 
         # Asignación de las propiedades del nodo con anotaciones de tipo explícitas.
         self.identifier: str = identifier  # Nombre de la función o método.
-        self.params: Dict[str, str] = params  # Parámetros con sus tipos.
+        self.params: List[Tuple[str, str]] = params  # Parámetros con sus tipos.
         # Anotación del tipo de retorno de la función o método.
         self.return_type_annotation: str = return_type_annotation
         # El cuerpo de la función o método
@@ -211,7 +203,7 @@ class TypeNode(ExtendableNode):
     def __init__(
         self,
         identifier: str,
-        params: Dict[str, str],
+        params: List[Tuple[str, str]],
         super_type: str,
         body: Tuple[List[AssignmentNode], List[AssignmentNode]],
         token: Optional[Token] = None,
@@ -219,7 +211,7 @@ class TypeNode(ExtendableNode):
     ) -> None:
 
         super().__init__(identifier, token, ntype)
-        self.params: Dict[str, str] = params  # Lista de parametros
+        self.params:List[Tuple[str, str]] = params  # Lista de parametros
         self.super_type: str = super_type[0]  # Tipo del padre
         # Argumentos del tipo del padre
         self.super_type_args: List[ExpressionNode] = super_type[1]
@@ -246,7 +238,7 @@ class FuncNode(CallableNode):
     def __init__(
         self,
         identifier: str,
-        params: Dict[str, str],
+        params: List[Tuple[str, str]],
         type_annotation: str,
         body: Union[ExpressionNode, BlockNode],
         token: Optional[Token] = None,
@@ -260,9 +252,9 @@ class MethodNode(CallableNode):
     def __init__(
         self,
         identifier: str,
-        params: Dict[str, str],
+        params: List[Tuple[str, str]],
         type_annotation: str,
-        body: Union[ExpressionNode, BlockNode],
+        body: Optional[Union[ExpressionNode, BlockNode]] = None,
         token: Optional[Token] = None,
         ntype: str = "FUNCTION"
     ) -> None:
@@ -325,7 +317,7 @@ class BlockNode(ExpressionNode):
 class LetNode(ExpressionNode):
     def __init__(
         self,
-        bindings: List[AssignmentNode],
+        bindings: List[Union[AssignmentNode|DassignmentNode]],
         body: Union[ExpressionNode, BlockNode],
         token: Optional[Token] = None,
         ntype: str = "LET"
@@ -340,7 +332,7 @@ class VectorIndexNode(ExpressionNode):
     def __init__(
         self,
         identifier: str,
-        index: str,
+        index: ExpressionNode,
         token: Optional[Token] = None,
         ntype: str = "VECTOR_INDEX"
     ) -> None:
@@ -446,7 +438,7 @@ class ImplicitVectorNode(TypeInstanceNode):
         expression: ExpressionNode,
         identifier: str,
         iterable: ExpressionNode,
-        token: List[Token] = None,
+        token: Optional[Token] = None,
         ntype: str = "IMPLICIT_VECTOR"
     ) -> None:
 
