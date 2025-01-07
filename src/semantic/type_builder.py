@@ -17,12 +17,12 @@ class TypeBuilderVisitor:
 
     @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):
-        statements: StatementsNode = node.statements
-        for typex in statements.statements_type:
+        statements: list = node.statements
+        for typex in statements[0]:
             self.visit(typex)
-        for func in statements.statements_func:
+        for func in statements[1]:
             self.visit(func)
-        for protocol in statements.statements_protocol:
+        for protocol in statements[2]:
             self.visit(protocol)
 
     @visitor.when(TypeNode)

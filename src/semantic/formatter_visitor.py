@@ -11,10 +11,6 @@ class Formatter(object):
     @visitor.when(ProgramNode)
     def visit(self, node:ProgramNode, tabs=0):
         pass
-    
-    @visitor.when(StatementsNode)
-    def visit(self, node:StatementsNode, tabs=0):
-        pass
 
     @visitor.when(StatementNode)
     def visit(self, node:StatementNode, tabs=0):

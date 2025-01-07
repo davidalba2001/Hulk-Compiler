@@ -17,12 +17,12 @@ class TypeCheckerVisitor():
 
     @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):
-        statements: StatementsNode = node.statements
-        for typex in statements.statements_type:
+        statements: list = node.statements
+        for typex in statements[0]:
             self.visit(typex)
-        for func in statements.statements_func:
+        for func in statements[1]:
             self.visit(func)
-        for protocol in statements.statements_protocol:
+        for protocol in statements[2]:
             self.visit(protocol)
         self.visit(node.main_expression)
 
@@ -111,9 +111,6 @@ class TypeCheckerVisitor():
             self.errors.append(SemanticError("No se puede usar tipos distintos a  \'number\' en una exponenciacion"))
             return self.context.get_type('<error>')
         
-    @visitor.when(ConstantNode)
-    def visit(self, node: ConstantNode, scope: Scope):
-        return self.context.get_type('number')       
 
     @visitor.when(NumberNode)
     def visit(self, node:NumberNode, scope: Scope):
@@ -428,60 +425,3 @@ class TypeCheckerVisitor():
             return self.context.get_type('<error>')
         args = [self.visit(arg) for arg in node.arguments]
         return self.visit(FuncInfo(args, definition), scope)
-    ########### Built-in Functions ####################################################################################
-    ###################################################################################################################
-    @visitor.when(SqrtNode)
-    def visit(self, node: SqrtNode, scope: Scope):
-        argument:Type = self.visit(node.arguments, scope)
-        if not argument.conforms_to(self.context.get_type('number')):
-            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
-            return self.context.get_type('<error>')
-        else: return self.context.get_type('number')
-
-    @visitor.when(SinNode)
-    def visit(self, node: SinNode, scope: Scope):
-        argument:Type = self.visit(node.arguments, scope)
-        if not argument.conforms_to(self.context.get_type('number')):
-            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
-            return self.context.get_type('<error>')
-        else: return self.context.get_type('number')
-
-    @visitor.when(CosNode)
-    def visit(self, node: CosNode, scope: Scope):
-        argument:Type = self.visit(node.arguments, scope)
-        if not argument.conforms_to(self.context.get_type('number')):
-            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
-            return self.context.get_type('<error>')
-        else: return self.context.get_type('number')
-
-    @visitor.when(ExpNode)
-    def visit(self, node: ExpNode, scope: Scope):
-        argument:Type = self.visit(node.arguments, scope)
-        if not argument.conforms_to(self.context.get_type('number')):
-            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no se esta usando un argumento numerico'))
-            return self.context.get_type('<error>')
-        else: return self.context.get_type('number')
-
-    @visitor.when(RandNode)
-    def visit(self, node: RandNode, scope: Scope):
-        return self.context.get_type('number')
-
-    @visitor.when(LogNode)
-    def visit(self, node: LogNode, scope: Scope):
-        left:Type = self.visit(node.arguments[0], scope)
-        rigt:Type = self.visit(node.arguments[1], scope)
-        if left.conforms_to(self.context.get_type('number')) and rigt.conforms_to(self.context.get_type('number')) :
-            return self.context.get_type('number')
-        else:
-            self.errors.append(SemanticError("No se puede usar tipos distintos a \'number\' al evaluar la funcion log"))
-            return self.context.get_type('<error>')
-
-    @visitor.when(PrintNode)
-    def visit(self, node: PrintNode, scope: Scope):
-        argument:Type = self.visit(node.arguments, scope)
-        if not argument.conforms_to(self.context.get_type('number')):
-            self.errors.append(SemanticError(f'En la llamada a la funcion {node.identifier} no puede usar argumentos de tipo {argument.name}'))
-            return self.context.get_type('<error>')
-        else: return argument
-    #####################################################################################################################################
-    ###################################################################################################################################
