@@ -11,7 +11,7 @@ __pycache__/
 build/
 .vscode/
 garbage/
-cache/
+# cache/
 develop-eggs/
 dist/
 downloads/
