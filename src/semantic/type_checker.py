@@ -406,7 +406,7 @@ class TypeCheckerVisitor():
         return result
     
     @visitor.when(MethodCallNode)
-    def visist(self, node: MethodCallNode, scope: Scope):
+    def visit(self, node: MethodCallNode, scope: Scope):
         instance: VariableInfo = None
         if scope.is_defined(node.type_identifier): instance = scope.find_variable(node.type_identifier)
         else:

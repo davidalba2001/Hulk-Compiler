@@ -1,7 +1,7 @@
-from src.semantic.semantic import*
-from src.semantic.type_builder import TypeBuilderVisitor
-from src.semantic.type_checker import TypeCheckerVisitor
-from src.semantic.type_collector import TypeCollectorVisitor
+from semantic.semantic import*
+from semantic.type_builder import TypeBuilderVisitor
+from semantic.type_checker import TypeCheckerVisitor
+from semantic.type_collector import TypeCollectorVisitor
 class Semantic_Check:
     def __init__(self):
         self.context = Context()
