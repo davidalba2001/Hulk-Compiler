@@ -77,6 +77,8 @@
 
 
 
+
+
 └── ProgramNode(statements,main_expression)
                     │            │
                     │            └───┬── ExpressionNode()
@@ -205,7 +207,7 @@ class TypeNode(ExtendableNode):
         identifier: str,
         params: List[Tuple[str, str]],
         super_type: str,
-        body: Tuple[List[AssignmentNode], List[AssignmentNode]],
+        body: Tuple[List[AssignmentNode], List[MethodNode]], #TODO No recuerdo si aca se puede hacer una asignacion destructiva
         token: Optional[Token] = None,
         ntype: str = "TYPE"
     ) -> None:
@@ -216,7 +218,7 @@ class TypeNode(ExtendableNode):
         # Argumentos del tipo del padre
         self.super_type_args: List[ExpressionNode] = super_type[1]
         self.attributes: List[AssignmentNode] = body[0]  # Atributos del tipo
-        self.methods: List[AssignmentNode] = body[1]  # Metodos del tipo
+        self.methods: List[MethodNode] = body[1]  # Metodos del tipo
 
 
 class ProtocolNode(ExtendableNode):
