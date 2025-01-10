@@ -127,8 +127,8 @@ class LR1Parser(ShiftReduceParser):
             visited = {start: automaton}
 
             while pending:
-                current = pending.pop()
-                current_state = visited[current]
+                current_kernel = pending.pop()
+                current_state = visited[current_kernel]
 
                 for symbol in G.terminals + G.nonTerminals:
 
@@ -137,10 +137,9 @@ class LR1Parser(ShiftReduceParser):
                     if not kernel:
                         continue
                     try:
-                        next_state = visited[kernel]
+                        next_state = visited[kernel] # Si ya se visito el kernel entonces se obtiene el estado
                     except KeyError:
-                        next_items = frozenset(goto_lr1(current_state.state, symbol, firsts))
-                        visited[kernel] = next_state = State(next_items, True)
+                        visited[kernel] = next_state = State(frozenset(goto_lr1(current_state.state, symbol, firsts)), True)
                         pending.append(kernel)
 
                     current_state.add_transition(symbol.Name, next_state)
@@ -180,11 +179,13 @@ class LR1Parser(ShiftReduceParser):
 
     @staticmethod
     def _register(table, key, value, state=None, debug=False):
-        if key in table and table[key] != value:
-            if (state is None):
-                raise AssertionError("Shift-Reduce or Reduce-Reduce conflict!!!")
+        if key not in table or table[key] == value:
+            table[key] = value
+        elif state is None:  
+           raise AssertionError("Shift-Reduce or Reduce-Reduce conflict!!!")
+        else:
             raise AssertionError(LR1Parser.identify_conflicts(state,key[1], debug))
-        table[key] = value
+        
 
     @staticmethod
     def identify_conflicts(state: State, symbol, debug=False):

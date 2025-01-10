@@ -1,1 +1,6 @@
--1%-1 -(-2+4) -- 6 + 1;
+
+function aplha(a,b){
+    a + b;
+}
+
+let x = 1 in aplha(x,2);

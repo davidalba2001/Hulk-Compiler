@@ -28,23 +28,23 @@ class ShiftReduceParser:
             state = stack[-1]
             if isTokenList:
                 lookahead_token: Token = w[cursor]
-                lookahead = lookahead_token.ttype
+                lookahead_type = lookahead_token.ttype
             else:
-                lookahead = w[cursor]
+                lookahead_type = w[cursor]
             if self.verbose:
                 print("\n\n =========================================================")
                 print(stack, "<---||--->", w[cursor:cursor+10])
 
             if isTokenList:
-                if (state, lookahead) not in self.action:
+                if (state, lookahead_type) not in self.action:
                     raise SyntaxError(
-                        f"Unexpected symbol: {lookahead} at (line {lookahead_token.line}, column {lookahead_token.column})"
+                        f"Unexpected symbol: {lookahead_type} at (line {lookahead_token.line}, column {lookahead_token.column})"
                     )
             else:
-                if (state, lookahead) not in self.action:
-                    raise SyntaxError(f"Unexpected symbol: {lookahead}")
+                if (state, lookahead_type) not in self.action:
+                    raise SyntaxError(f"Unexpected symbol: {lookahead_type}")
 
-            action, tag = self.action[state, lookahead]
+            action, tag = self.action[state, lookahead_type]
             # Your code here!!! (Shift case)
             if action == self.SHIFT:
                 stack.append(tag)
@@ -70,6 +70,7 @@ class ShiftReduceParser:
             # Your code here!!! (Invalid case)
             else:
                 raise SyntaxError(f"Invalid action: {action}")
+
 
 def compute_local_first(firsts, alpha):
     first_alpha = ContainerSet()
