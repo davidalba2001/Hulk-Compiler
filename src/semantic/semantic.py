@@ -232,7 +232,7 @@ class IntType(Type):
 
 class VarType(Type):
     def __init__(self):
-        super().__init__(self, 'Var')
+        super().__init__('Var')
    
     def conforms_to(self, other):
         return True

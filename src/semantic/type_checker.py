@@ -18,11 +18,11 @@ class TypeCheckerVisitor():
     @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):
         for typex in node.statements_type:
-            self.visit(typex)
+            self.visit(typex, self.scope.create_child())
         for func in node.statements_func:
-            self.visit(func)
+            self.visit(func, self.scope.create_child())
         for protocol in node.statements_protocol:
-            self.visit(protocol)
+            self.visit(protocol, self.scope.create_child())
 
     @visitor.when(TypeNode)
     def visit(self, node: TypeNode, scope: Scope):
@@ -30,7 +30,7 @@ class TypeCheckerVisitor():
         methods_scope = scope.create_child()
         methods_scope.define_variable('self', node.identifier.lex)
         for param, type in node.params:
-            type_scope.define_variable(param, type)
+            type_scope.define_variable(param.lex, type.lex)
         for att in node.attributes:
             self.visit(att, type_scope)
         for meth in node.methods:
@@ -41,8 +41,8 @@ class TypeCheckerVisitor():
         vars = []
         assign: AssignmentNode
         for assign in node.bindings:
-            assignment: AssignmentNode = assign
-            vars.append((assignment.identifier, self.visit(assign, scope)))
+            assignment: AssignmentNode | DassignmentNode = assign
+            vars.append((assignment.identifier.lex, self.visit(assign, scope)))
         let_scope = scope.create_child()
         for var, type in vars:
             let_scope.define_variable(var, type.name)
@@ -55,7 +55,7 @@ class TypeCheckerVisitor():
             expression: Type = self.visit(exp, scope)
         return expression
     
-
+#TODO: seguir revision a partir de esta linia
     ### --------------- Expresiones aritmeticas con numbers -----------------------###
     ##################################################################################
     
@@ -291,8 +291,8 @@ class TypeCheckerVisitor():
         args = [self.visit(arg) for arg in node.arguments]
         return self.visit(FuncInfo(args, definition), scope)
 
-    @visitor.when(IdNode)
-    def visit(self, node: IdNode, scope: Scope):
+    @visitor.when(IdentifierNode)
+    def visit(self, node: IdentifierNode, scope: Scope):
         variable: VariableInfo = None
         if scope.is_defined(node.lex):
             variable =  scope.find_variable()

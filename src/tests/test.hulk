@@ -1,4 +1,3 @@
-
 function aplha(a,b){
     a + b;
 }
