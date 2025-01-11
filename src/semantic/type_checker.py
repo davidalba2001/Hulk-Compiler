@@ -17,14 +17,12 @@ class TypeCheckerVisitor():
 
     @visitor.when(ProgramNode)
     def visit(self, node: ProgramNode):
-        statements: list = node.statements
-        for typex in statements[0]:
+        for typex in node.statements_type:
             self.visit(typex)
-        for func in statements[1]:
+        for func in node.statements_func:
             self.visit(func)
-        for protocol in statements[2]:
+        for protocol in node.statements_protocol:
             self.visit(protocol)
-        self.visit(node.main_expression)
 
     @visitor.when(TypeNode)
     def visit(self, node: TypeNode, scope: Scope):

@@ -7,7 +7,7 @@ from semantic.semantic_chequer import Semantic_Check
 
 def main():
     lexer = Lexer(HulkLang.lexer_table(), "eof")
-    parser = LR1Parser(Hulk_G, debug=True)
+    parser = LR1Parser(Hulk_G, True)
 
     with open("src/tests/test.hulk", "r") as file:
         text = file.read()

@@ -51,7 +51,7 @@ class LexerError(Exception):
         return (
             f"Error: Unrecognized symbol '{lexeme}' at line {line}, column {column}\n"
             f"    {line} | {error_line} \n"
-            f"    {" " * length_line}   {pointer_line}"
+            f"    {' ' * length_line}   {pointer_line}"
         )
 
 

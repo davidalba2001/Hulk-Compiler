@@ -143,8 +143,6 @@ class Type:
         output += '}\n'
         return output
 
-    def __repr__(selfdec):
-        return str(self)
 
 class Protocol:
     def __init__(self, name: str):
