@@ -16,8 +16,10 @@ def main():
         tokens = lexer(text)
         parse, operations = parser(tokens)
         ast = evaluate_reverse_parse(parse, operations, tokens)
+        print("VIVA CUBA LIBRE ABAJO LA DICTADURA")
     except SyntaxError as error:
         print(error)
+
     
     semantic = Semantic_Check()
     print(semantic.semantic_checking(ast))

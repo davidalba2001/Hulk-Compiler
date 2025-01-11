@@ -1,5 +1,5 @@
 from cmp.pycompiler import Production, Sentence, Symbol, EOF, Epsilon
-
+import inspect
 
 class ContainerSet:
     def __init__(self, *values, contains_epsilon=False):
@@ -121,6 +121,12 @@ class Token:
         self.line = line  # Línea del token
         self.column = column  # Columna del token
         self.index = index  # Índice del token en la lista
+
+    @staticmethod
+    def attr_names():
+        attributes = inspect.signature(Token).parameters
+        return list(attributes.keys())
+
 
     def __str__(self):
         return f"Token: {self.ttype} ({self.lex}) at line {self.line}, column {self.column}"

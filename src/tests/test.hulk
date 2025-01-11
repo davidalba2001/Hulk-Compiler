@@ -1,2 +1,6 @@
 
-let x = 1 in alpha(x, 2);
+function aplha(a,b){
+    a + b;
+}
+
+let x = 1 in aplha(x,2);

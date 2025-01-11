@@ -97,8 +97,8 @@ class EndAnchorNode(UnaryNode):
 
 class RangeNode(Node):
     def __init__(self, characters, ranges):
-        self.characters = characters
-        self.ranges = ranges
+        self.characters = [character.lex for character in characters]
+        self.ranges = [(symbol[0].lex,symbol[1].lex) for symbol in ranges]
 
     def evaluate(self):
         return automata_range(self.characters, self.ranges)
@@ -106,8 +106,8 @@ class RangeNode(Node):
 
 class NotRangeNode(Node):
     def __init__(self, characters, ranges):
-        self.characters = characters
-        self.ranges = ranges
+        self.characters = [character.lex for character in characters] 
+        self.ranges = [(symbol[0].lex,symbol[1].lex) for symbol in ranges]
 
     def evaluate(self):
         return automata_range(self.characters, self.ranges, True)
