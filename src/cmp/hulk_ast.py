@@ -454,7 +454,19 @@ class MethodCallNode(CallNode):
         super().__init__(identifier, arguments)
         self.type_identifier = IdentifierNode(
             type_identifier)  # Siempre un IdentifierNode
+        
 
+class MemberAccessNode:
+    """
+        Nodo para acceso de atributos
+    """
+
+    def __init__(
+        self,
+        arguments: List[ExpressionNode],
+    ) -> None:
+        self.arguments = arguments
+  
 # endregion
 
 # region String Operations Nodes

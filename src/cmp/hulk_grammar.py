@@ -27,8 +27,8 @@ optional_parentized_param_list, parentized_param_list = Hulk_G.NonTerminals('OPT
 optional_parentized_argument_list, parentized_argument_list = Hulk_G.NonTerminals('OPTIONAL_PARENIZED_ARGUMENT_LIST PARENIZED_ARGUMENT_LIST')
 inherits_clause, attributes_or_methods, attribute_or_method = Hulk_G.NonTerminals('INHERITS_CLAUSE ATTRIBUTES_OR_METHODS ATTRIBUTE_OR_METHOD')
 signatures = Hulk_G.NonTerminal('SIGNATURES')
-method_decl, method_inline, method_full, method_call, method_signature = Hulk_G.NonTerminals(
-    'METHOD_DECL METHOD_INLINE METHOD_FULL METHOD_CALL METHOD_SIGNATURE')
+method_decl, method_inline, method_full, method_call, method_signature, member_access, member_list = Hulk_G.NonTerminals(
+    'METHOD_DECL METHOD_INLINE METHOD_FULL METHOD_CALL METHOD_SIGNATURE MEMBER_ACCESS MEMBER_LIST')
 type_annotation, optional_type_annotation = Hulk_G.NonTerminals('TYPE_ANNOTATION OPTIONAL_TYPE_ANNOTATION')
 annotation_params, annotation_param = Hulk_G.NonTerminals('ANNOTATION_PARAMS ANNOTATION_PARAM')
 protocol_decl, protocol_body, extends_clause = Hulk_G.NonTerminals('PROTOCOL_DECL PROTOCOL_BODY EXTENDS_CLAUSE')
@@ -79,7 +79,7 @@ statement_block %= statement_block + expression_statement, lambda h, s: s[1] + [
 statement_block %= expression_statement, lambda h, s: [s[1]]
 
 expression_statement %= expression + semicolon, lambda h, s: s[1]
-expression_statement %= expression_block, lambda h, s: s[1]
+#expression_statement %= expression_block, lambda h, s: s[1]
 # expression_statement %= expression_block + semicolon, lambda h, s: s[1]
 
 expression_block %= brace_open + statement_block + brace_close, lambda h, s: BlockNode(s[2])
@@ -94,7 +94,6 @@ expression %= while_in_line, lambda h, s: s[1]
 expression %= for_loop, lambda h, s: s[1]
 expression %= for_in_line, lambda h, s: s[1]
 expression %= type_inst, lambda h, s: s[1]
-expression %= expression_block,lambda h, s: s[1]
 
 as_expression %= boolean_factor + as_keyword + identifier, lambda h, s: AsNode(s[1], s[3])
 
@@ -138,6 +137,12 @@ boolean_factor %= function_call, lambda h, s: s[1]
 boolean_factor %= method_call, lambda h, s: s[1]
 boolean_factor %= vector_indexing, lambda h, s: s[1]
 boolean_factor %= identifier, lambda h, s: IdentifierNode(s[1])
+boolean_factor %= expression_block, lambda h, s: s[1]
+boolean_factor %= member_access, lambda h, s: MemberAccessNode(s[1])
+
+member_access %= identifier + dot + member_list, lambda h, s: [s[1]]+s[2]
+member_list %= identifier + dot + member_list, lambda h, s: [s[1]] + s[2]
+member_list %= identifier, lambda h, s: [s[1]]
 
 relational_expr %= boolean_factor + less_than + boolean_factor, lambda h, s: LessThanNode(s[1], s[3])
 relational_expr %= boolean_factor + greater_than + boolean_factor, lambda h, s: GreaterThanNode(s[1], s[3])
@@ -227,8 +232,8 @@ optional_parentized_argument_list %= Hulk_G.Epsilon, lambda h, s: None
 parentized_argument_list %= paren_open + argument_list + paren_close, lambda h, s: s[1]
 
 # Method Call Expression
-method_call %= identifier + dot + identifier + paren_open + argument_list + \
-    paren_close, lambda h, s: MethodCallNode(s[1], s[3], s[5])
+method_call %= member_access + paren_open + argument_list + \
+    paren_close, lambda h, s: MethodCallNode(s[1], s[3])
 
 # Vector Instance
 vector_inst %= square_bracket_open + vector_core + square_bracket_close, lambda h, s: s[2]
