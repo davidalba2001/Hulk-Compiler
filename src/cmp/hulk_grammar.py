@@ -140,9 +140,9 @@ boolean_factor %= identifier, lambda h, s: IdentifierNode(s[1])
 boolean_factor %= expression_block, lambda h, s: s[1]
 boolean_factor %= member_access, lambda h, s: MemberAccessNode(s[1])
 
-member_access %= identifier + dot + member_list, lambda h, s: [s[1]]+s[2]
-member_list %= identifier + dot + member_list, lambda h, s: [s[1]] + s[2]
-member_list %= identifier, lambda h, s: [s[1]]
+member_access %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[1])]+s[2]
+member_list %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[1])] + s[2]
+member_list %= identifier, lambda h, s: [IdentifierNode(s[1])]
 
 relational_expr %= boolean_factor + less_than + boolean_factor, lambda h, s: LessThanNode(s[1], s[3])
 relational_expr %= boolean_factor + greater_than + boolean_factor, lambda h, s: GreaterThanNode(s[1], s[3])

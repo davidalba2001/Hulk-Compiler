@@ -442,18 +442,18 @@ class FunctionCallNode(CallNode):
 
 
 class MethodCallNode(CallNode):
+
+    """
+    Nodo para llamadas a métodos, incluyendo un tipo explícito.
+    """
+
     def __init__(
         self,
-        type_identifier: "Token",
-        identifier: "Token",
-        arguments: List[ExpressionNode],
+        arguments: MemberAccessNode,
     ) -> None:
-        """
-        Nodo para llamadas a métodos, incluyendo un tipo explícito.
-        """
-        super().__init__(identifier, arguments)
-        self.type_identifier = IdentifierNode(
-            type_identifier)  # Siempre un IdentifierNode
+
+        super().__init__(arguments.arguments[-2], arguments)
+        self.type_identifier = arguments.arguments[-1]  # Siempre un IdentifierNode
         
 
 class MemberAccessNode:
