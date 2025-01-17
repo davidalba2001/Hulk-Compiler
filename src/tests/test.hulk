@@ -1,5 +1,1 @@
-function aplha(a,b){
-    a + b;
-}
-
-let x = 1 in aplha(x,2);
+let a = {print(" ");  } + 5 in print(" ");

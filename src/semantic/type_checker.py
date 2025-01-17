@@ -55,7 +55,6 @@ class TypeCheckerVisitor():
             expression: Type = self.visit(exp, scope)
         return expression
     
-#TODO: seguir revision a partir de esta linia
     ### --------------- Expresiones aritmeticas con numbers -----------------------###
     ##################################################################################
     
@@ -240,21 +239,21 @@ class TypeCheckerVisitor():
         annotation = self.context.get_type('var')
         protocol = False
         try:
-            annotation = self.context.get_type(node.type_annotation)
+            annotation = self.context.get_type(node.type_annotation.lex)
         except:
             try:
-                annotation = self.context.get_protocol(node.type_annotation)
+                annotation = self.context.get_protocol(node.type_annotation.lex)
                 protocol = True
             except:    
-                self.errors.append(SemanticError(f'El tipo {node.type_annotation} anotado a la variable {node.identifier} no esta definido'))
+                self.errors.append(SemanticError(f'El tipo {node.type_annotation.lex} anotado a la variable {node.identifier.lex} no esta definido'))
                 return self.context.get_type('<error>')
         
         exp_type: Type = self.visit(node.expression, current_scope)
         if not exp_type.conforms_to(annotation) and not protocol:
-            self.errors.append(SemanticError(f'La variable {node.identifier} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
+            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
             return self.context.get_type('<error>')
         elif protocol and not annotation.implemented_by(exp_type):
-            self.errors.append(SemanticError(f'La variable {node.identifier} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
+            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {annotation} no puede ser asignada con el tipo {exp_type}'))
             return self.context.get_type('<error>')
         elif not protocol: return exp_type
         else: return annotation
@@ -262,14 +261,14 @@ class TypeCheckerVisitor():
     @visitor.when(DassignmentNode)
     def visit(self, node: DassignmentNode, scope: Scope):
         current_scope = scope.create_child()
-        var: VariableInfo = scope.find_variable(node.identifier)
-        if not scope.is_defined(node.identifier):
-            self.errors.append(SemanticError(f'La variable {node.identifier} no esta definida'))
+        var: VariableInfo = scope.find_variable(node.identifier.lex)
+        if not scope.is_defined(node.identifier.lex):
+            self.errors.append(SemanticError(f'La variable {node.identifier.lex} no esta definida'))
             return self.context.get_type('<error>')
         
         exp_type: Type = self.visit(node.expression, current_scope)
         if not exp_type.conforms_to(self.context.get_type(var.type)):
-            self.errors.append(SemanticError(f'La variable {node.identifier} de tipo {self.context.get_type(var.type)} no puede ser asignada con el tipo {exp_type}'))
+            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {self.context.get_type(var.type)} no puede ser asignada con el tipo {exp_type}'))
             return self.context.get_type('<error>')
         else: return self.context.get_type(var.type)
 
@@ -277,16 +276,16 @@ class TypeCheckerVisitor():
     @visitor.when(FunctionCallNode)
     def visit(self, node: FunctionCallNode, scope: Scope):
         try:
-            funcs: list[Method] = self.context.functions[node.identifier]
+            funcs: list[Method] = self.context.functions[node.identifier.lex]
         except:
-            self.errors.append(SemanticError(f'La funcion {node.identifier} no esta definida en el contexto'))
+            self.errors.append(SemanticError(f'La funcion {node.identifier.lex} no esta definida en el contexto'))
             return self.context.get_type('<error>')
         definition = None
         for func in funcs:
             if len(func.param_names) == node.arguments:
                 definition = func.definition
         if not definition:
-            self.errors.append(SemanticError(f'La funcion {node.identifier} no tiene sobrecarga definida con {len(node.arguments)}'))
+            self.errors.append(SemanticError(f'La funcion {node.identifier.lex} no tiene sobrecarga definida con {len(node.arguments)}'))
             return self.context.get_type('<error>')
         args = [self.visit(arg) for arg in node.arguments]
         return self.visit(FuncInfo(args, definition), scope)
@@ -312,14 +311,14 @@ class TypeCheckerVisitor():
             if typex.conforms_to(args[i]):
                 func_scope.define_variable(params[i][0], typex.name)
             else:
-                self.errors.append(SemanticError(f'El parametro {params[i][0]} debe recibir un argumento de {typex.name} en la funcion {func_def.identifier}'))
+                self.errors.append(SemanticError(f'El parametro {params[i][0].lex} debe recibir un argumento de {typex.name} en la funcion {func_def.identifier.lex}'))
                 return self.context.get_type('<error>')
         result: Type = self.visit(func_def.body, func_def)
-        return_type: Type = self.context.get_type(func_def.type_annotation)
+        return_type: Type = self.context.get_type(func_def.type_annotation.lex)
         if result.conforms_to(return_type):
             return return_type
         else:
-            self.errors.append(SemanticError(f'No se esta retornando el tipo {return_type} en la funcion {func_def.identifier}')) 
+            self.errors.append(SemanticError(f'No se esta retornando el tipo {return_type} en la funcion {func_def.identifier.lex}')) 
             return self.context.get_type('<error>')
 
     @visitor.when(FuncNode)
@@ -329,18 +328,18 @@ class TypeCheckerVisitor():
             name, typex = param
             scope.define_variable(name, typex)
         result: Type = self.visit(node.body, fun_scope)
-        if not result.conforms_to(node.type_annotation):
-            self.errors.append(SemanticError(f'No se esta retornando el tipo {node.type_annotation} en la funcion {node.identifier}'))
+        if not result.conforms_to(node.type_annotation.lex):
+            self.errors.append(SemanticError(f'No se esta retornando el tipo {node.type_annotation.lex} en la funcion {node.identifier.lex}'))
             return self.context.get_type('<error>')
         else: 
-            return node.type_annotation
+            return node.type_annotation.lex
 
     @visitor.when(AsNode)
     def visit(self, node: AsNode, scope: Scope):
         try:
-            down_cast = self.context.get_type(node.identifier)
+            down_cast = self.context.get_type(node.identifier.lex)
         except:
-            self.errors.append(SemanticError(f'El tipo {node.identifier} no esta definido'))
+            self.errors.append(SemanticError(f'El tipo {node.identifier.lex} no esta definido'))
             return self.context.get_type('<error>')
         exp: Type = self.visit(node.expression)
         if exp.conforms_to(down_cast): return down_cast
@@ -399,27 +398,27 @@ class TypeCheckerVisitor():
             self.errors.append(SemanticError(f'El iterador proporcionado no implementa iterable'))
             return self.context.get_type('<error>')
         for_scope = scope.create_child()
-        for_scope.define_variable(node.identifier, 'var')
+        for_scope.define_variable(node.identifier.lex, 'var')
         result: Type = self.visit(node.body, for_scope)
         return result
     
     @visitor.when(MethodCallNode)
     def visit(self, node: MethodCallNode, scope: Scope):
         instance: VariableInfo = None
-        if scope.is_defined(node.type_identifier): instance = scope.find_variable(node.type_identifier)
+        if scope.is_defined(node.type_identifier.lex): instance = scope.find_variable(node.type_identifier.lex)
         else:
-            self.errors.append(SemanticError(f'La variable {node.type_identifier} no esta definida en el ambito'))
+            self.errors.append(SemanticError(f'La variable {node.type_identifier.lex} no esta definida en el ambito'))
         instance_type: Type =  self.context.get_type(instance.type)
-        funcs: list[Method] = [method for method in instance_type.methods if method.name == node.identifier]
+        funcs: list[Method] = [method for method in instance_type.methods if method.name == node.identifier.lex]
         if len(funcs) == 0:
-            self.errors.append(SemanticError(f'La funcion {node.identifier} no esta definida en el tipo {instance_type.name}'))
+            self.errors.append(SemanticError(f'La funcion {node.identifier.lex} no esta definida en el tipo {instance_type.name}'))
             return self.context.get_type('<error>')
         definition = None
         for func in funcs:
             if len(func.param_names) == node.arguments:
                 definition = func.definition
         if not definition:
-            self.errors.append(SemanticError(f'La funcion {node.identifier} no tiene sobrecarga definida con {len(node.arguments)} en el tipo {instance_type.name}'))
+            self.errors.append(SemanticError(f'La funcion {node.identifier.lex} no tiene sobrecarga definida con {len(node.arguments)} en el tipo {instance_type.name}'))
             return self.context.get_type('<error>')
         args = [self.visit(arg) for arg in node.arguments]
         return self.visit(FuncInfo(args, definition), scope)
