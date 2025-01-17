@@ -64,7 +64,7 @@ class Type:
             raise SemanticError(f'Parent type is already set for {self.name}.')
         self.parent = parent
 
-    def decget_attribute(self, name):
+    def get_attribute(self, name):
         try:
             return next(attr for attr in self.attributes if attr.name == name)
         except StopIteration:

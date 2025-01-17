@@ -463,7 +463,7 @@ class MemberAccessNode:
 
     def __init__(
         self,
-        arguments: List[ExpressionNode],
+        arguments: List[IdentifierNode],
     ) -> None:
         self.arguments = arguments
   

@@ -140,8 +140,8 @@ boolean_factor %= identifier, lambda h, s: IdentifierNode(s[1])
 boolean_factor %= expression_block, lambda h, s: s[1]
 boolean_factor %= member_access, lambda h, s: MemberAccessNode(s[1])
 
-member_access %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[1])]+s[2]
-member_list %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[1])] + s[2]
+member_access %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[1])]+s[3]
+member_list %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[1])] + s[3]
 member_list %= identifier, lambda h, s: [IdentifierNode(s[1])]
 
 relational_expr %= boolean_factor + less_than + boolean_factor, lambda h, s: LessThanNode(s[1], s[3])
@@ -178,7 +178,7 @@ type_decl %= type_keyword + identifier + optional_parentized_param_list + inheri
 
 
 inherits_clause %= inherits_keyword + identifier + optional_parentized_argument_list, lambda h, s: (s[3], s[3])
-inherits_clause %= Hulk_G.Epsilon, lambda h, s: ("Object",None) #TODO En vez de None quizas puede ser una lista vacia
+inherits_clause %= Hulk_G.Epsilon, lambda h, s: (Token("Object", "Object"),None) #TODO En vez de None quizas puede ser una lista vacia
 
 
 type_body %= attributes_or_methods, lambda h, s: s[1]
@@ -203,7 +203,7 @@ method_full %= identifier + parentized_param_list + optional_type_annotation + \
 let_expr %= let_keyword + binding_list + in_keyword + let_body, lambda h, s: LetNode(s[2], s[4])
 
 binding_list %= binding_list + comma + binding, lambda h, s: s[1] + [s[3]]
-binding_list %= binding, lambda h, s: s[1]
+binding_list %= binding, lambda h, s: [s[1]]
 binding %= assignment, lambda h, s: s[1]
 binding %= dassignment, lambda h, s: s[1]
 
@@ -214,7 +214,7 @@ dassignment %= identifier + dassign + expression, lambda h, s: DassignmentNode(s
 # Type anotation
 type_annotation %= colon + identifier, lambda h, s: s[2]
 optional_type_annotation %= type_annotation, lambda h, s: s[1]
-optional_type_annotation %= Hulk_G.Epsilon, lambda h, s: Token("UnknownType","UnknownType")
+optional_type_annotation %= Hulk_G.Epsilon, lambda h, s: Token("Var","Var")
 
 let_body %= expression, lambda h, s: s[1]
 
@@ -229,7 +229,7 @@ argument %= expression, lambda h, s: s[1]
 optional_parentized_argument_list %= parentized_argument_list, lambda h, s: s[1]
 optional_parentized_argument_list %= Hulk_G.Epsilon, lambda h, s: None
 
-parentized_argument_list %= paren_open + argument_list + paren_close, lambda h, s: s[1]
+parentized_argument_list %= paren_open + argument_list + paren_close, lambda h, s: s[2]
 
 # Method Call Expression
 method_call %= member_access + paren_open + argument_list + \

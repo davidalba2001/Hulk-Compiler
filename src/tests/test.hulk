@@ -1,1 +1,5 @@
-let a = {print(" ");  } + 5 in print(" ");
+type pito {
+    perro = 2;
+}
+
+let a = let agua = new pito() in {print(" "); agua.perro; } + 5 in print(" ");

@@ -9,7 +9,7 @@ class TypeBuilderVisitor:
         self.context: Context = context
         self.scope: Scope = scope
         self.errors: List[str] = errors
-        self.currentType: Type = None
+        self.current_type: Type = None
 
     @visitor.on("node")
     def visit(self, node, tabs):
