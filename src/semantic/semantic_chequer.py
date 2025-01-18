@@ -15,7 +15,7 @@ class Semantic_Check:
         self.context.types[ErrorType().name] = ErrorType()
         for func in self.default_functions:
             self.context.functions[func] = None
-        self.context.types['ERROR'] = ErrorType() 
+        self.context.create_protocol('Object')
     def semantic_checking(self, ast):
         type_collector = TypeCollectorVisitor(self.context, self.scope, self.errors)
         type_collector.visit(ast)

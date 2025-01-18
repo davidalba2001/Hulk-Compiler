@@ -1,4 +1,4 @@
-function tan(x: Number): Number => sin(x) / cos(x);
+function tan(x: number): number => sin(x) / cos(x);
 function cot(x) => 1 / tan(x);
 function operate(x, y) {
     print(x + y);
@@ -14,7 +14,7 @@ function gcd(a, b) => while (a > 0)
             a := m;
         };
 protocol Hashable {
-    hash(): Number;
+    hash(): number;
 }
 protocol Equatable extends Hashable {
     equals(other: Object,): Boolean;
@@ -23,13 +23,13 @@ protocol Iterable {
     next() : Boolean;
     current() : Object;
 }
-type Range(min:Number, max:Number) {
+type Range(min:number, max:number) {
     min = min;
     max = max;
     current = min - 1;
 
     next(): Boolean => (current := self.current + 1) < self.max;
-    current(): Number => self.current;
+    current(): number => self.current;
 }
 type Point(x,y) {
     x = x;
@@ -52,7 +52,7 @@ type Person(firstname, lastname) {
     lastname = lastname;
 
     name() => self.firstname @@ self.lastname;
-    hash() : Number {
+    hash() : number {
         5;
     }
 }
@@ -165,7 +165,7 @@ type C inherits A {
     let p = new Knight("Phil", "Collins") in
         print(p.name());
     let p: Person = new Knight("Phil", "Collins") in print(p.name());
-    let x: Number = 42 in print(x);
+    let x: number = 42 in print(x);
 
     let x = new Superman() in
         print(
