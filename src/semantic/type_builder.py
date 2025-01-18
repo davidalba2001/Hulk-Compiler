@@ -28,7 +28,7 @@ class TypeBuilderVisitor:
     @visitor.when(TypeNode)
     def visit(self, node: TypeNode):
 
-        self.currentType: Type = self.context.get_type(node.identifier.lex)
+        self.current_type: Type = self.context.get_type(node.identifier.lex)
 
         if isinstance(self.current_type, ErrorType):
             return
@@ -46,7 +46,7 @@ class TypeBuilderVisitor:
             inheritance = self.context.get_type(node.super_type.lex)
             ancestor = inheritance
             while ancestor:
-                if ancestor.name == self.currentType.name:
+                if ancestor.name == self.current_type.name:
                     self.errors.append(
                         SemanticError(
                             f'Circular dependency detected involving type "{node.identifier.lex}" at line {node.identifier.line}.'
@@ -64,7 +64,7 @@ class TypeBuilderVisitor:
             return
 
         try:
-            self.currentType.set_parent(inheritance)
+            self.current_type.set_parent(inheritance)
         except SemanticError:
             self.errors.append(
                 SemanticError(
@@ -86,11 +86,11 @@ class TypeBuilderVisitor:
                 )
                 return
             try:
-                self.currentType.define_arguments(pname.lex, ptype)
+                self.current_type.define_arguments(pname.lex, ptype)
             except SemanticError:
                 self.errors.append(
                     SemanticError(
-                        f'Argument with the name "{pname.lex}" already exists in type "{self.currentType.name}" at line {node.identifier.line}.'
+                        f'Argument with the name "{pname.lex}" already exists in type "{self.current_type.name}" at line {node.identifier.line}.'
                     )
                 )
 
@@ -99,6 +99,8 @@ class TypeBuilderVisitor:
 
         for method in node.methods:
             self.visit(method)
+
+        self.current_type = None
 
     @visitor.when(AssignmentNode)
     def visit(self, node: AssignmentNode):
@@ -168,13 +170,13 @@ class TypeBuilderVisitor:
         if self.current_type:
             try:
                 try:
-                    method = self.currentType.get_method()
+                    method = self.current_type.get_method()
                     if isinstance(method,ErrorType):
                         return
-                    self.currentType.methods[node.identifier,len(param_names)] = ErrorType
+                    self.current_type.methods[node.identifier,len(param_names)] = ErrorType
                 except:    
                     self.current_type.define_method(
-                        node.identifier.lex, param_names, param_types, return_type)
+                        node.identifier.lex, param_names, param_types, return_type, node)
                 
             except SemanticError:
                 self.errors.append(
@@ -234,7 +236,7 @@ class TypeBuilderVisitor:
             if isinstance(function,ErrorType):
                 return
             self.context.create_function(
-                node.identifier.lex, param_names, param_types, return_type
+                node.identifier.lex, param_names, param_types, return_type, node
             )
         except SemanticError:
             self.errors.append(

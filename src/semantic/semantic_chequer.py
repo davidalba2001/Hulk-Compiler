@@ -6,7 +6,7 @@ class Semantic_Check:
     def __init__(self):
         self.scope = Scope()
         self.context = Context()
-        self.default_types = ['Object', 'number', 'str', 'Boolean']
+        self.default_types = ['Object', 'number', 'string', 'Boolean']
         self.default_functions = ['sen', 'cos', 'sqrt', 'exp', 'rand', 'log', 'print']
         self.errors = []
         for type in self.default_types:

@@ -1,6 +1,6 @@
 import itertools as itt
 from collections import OrderedDict
-from cmp.hulk_ast import FuncNode
+from cmp.hulk_ast import FuncNode, MethodNode, ExpressionNode
 
 class SemanticError(Exception):
     @property
@@ -8,7 +8,7 @@ class SemanticError(Exception):
         return self.args[0]
 
 class FuncInfo:
-    def __init__(self, params, node: FuncNode):
+    def __init__(self, params: list[ExpressionNode], node: FuncNode | MethodNode):
         self.params = params
         self.function = node
 
@@ -35,11 +35,12 @@ class Argument:
         return str(self)
 
 class Method:
-    def __init__(self, name, param_names, params_types, return_type):
+    def __init__(self, name, param_names, params_types, return_type, definition):
         self.name = name
         self.param_names = param_names
         self.param_types = params_types
         self.return_type = return_type
+        self.definition = definition
 
     def __str__(self):
         params = ', '.join(f'{n}:{t.name}' for n,t in zip(self.param_names, self.param_types))
@@ -58,6 +59,7 @@ class Type:
         self.methods:dict[(str,int),Method] = {}
         self.parent: Type = None
         self.arguments_parent = None
+        self.type_scope = Scope()
 
     def set_parent(self, parent):
         if self.parent is not None:
@@ -103,12 +105,12 @@ class Type:
             except SemanticError:
                 raise SemanticError(f'Method "{name}" with {nparams} parameters is not defined in {self.name} or its parents.')
     
-    def define_method(self, name:str, param_names:list, param_types:list, return_type):
+    def define_method(self, name:str, param_names:list, param_types:list, return_type, definition):
         try:
             self.methods[name,len(param_names)]
             raise SemanticError(f'Method "{name}" already defined in {self.name} with {len(param_names)} params')
         except KeyError:
-            self.methods[name,len(param_names)] = Method(name, param_names, param_types, return_type)
+            self.methods[name,len(param_names)] = Method(name, param_names, param_types, return_type, definition)
             
         return True 
         
@@ -262,13 +264,13 @@ class Context:
             raise SemanticError(f'The function name "{name}" has already been taken.')
         self.functions[name,nparam] = None
     
-    def create_function(self, name: str, param_names: list[str], param_types: list[str], return_type: str):
+    def create_function(self, name: str, param_names: list[str], param_types: list[str], return_type: str, definition):
         try:
             is_defined = self.functions[name,len(param_names)]
             if is_defined:
                 raise SemanticError(f'The function name "{name}" with {len(param_names)} parameters is already defined.')
             else:
-                self.functions[name,len(param_names)] = Method(name, param_names, param_types, return_type)
+                self.functions[name,len(param_names)] = Method(name, param_names, param_types, return_type, definition)
         except KeyError:
 
             self.functions[name,len(param_names)] = Method(name, param_names, param_types, return_type)
@@ -287,6 +289,7 @@ class Context:
     
     
     def get_type(self, name: str) -> Type:
+        if isinstance(name, Type): name = name.name
         if name not in self.types:
             raise SemanticError(f'The type "{name}" is not defined in the context.')
         return self.types[name]
@@ -302,7 +305,6 @@ class Context:
     
     def __repr__(self) -> str:
         return str(self)
-    
 class VariableInfo:
     def __init__(self, name, vtype):
         self.name = name

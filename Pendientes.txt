@@ -1,0 +1,3 @@
+Arreglar la asignacion destructiva para asignar cosas a un atributo de un objeto
+
+Arreglar los parametros anotados en los metodos de un protocolo

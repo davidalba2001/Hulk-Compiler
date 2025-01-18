@@ -177,7 +177,7 @@ type_decl %= type_keyword + identifier + optional_parentized_param_list + inheri
     brace_open + type_body + brace_close, lambda h, s: TypeNode(s[2], s[3], s[4], s[6])
 
 
-inherits_clause %= inherits_keyword + identifier + optional_parentized_argument_list, lambda h, s: (s[3], s[3])
+inherits_clause %= inherits_keyword + identifier + optional_parentized_argument_list, lambda h, s: (s[2], s[3])
 inherits_clause %= Hulk_G.Epsilon, lambda h, s: (Token("Object", "Object"),None) #TODO En vez de None quizas puede ser una lista vacia
 
 
@@ -259,13 +259,13 @@ annotation_param %= identifier + type_annotation, lambda h, s: (s[1], s[2])
 
 signatures %= signatures + method_signature, lambda h, s: s[1] + [s[2]]
 
-signatures %= method_signature, lambda h, s: s[1]
+signatures %= method_signature, lambda h, s: [s[1]]
 
 #TODO: Chequear que el retorno de los terminales no sea un token , ademas andir un token
 method_signature %= identifier + paren_open + annotation_params + paren_close + type_annotation + semicolon, lambda h, s: MethodNode(s[1],s[3],s[5])
 
 extends_clause %= extends_keyword + identifier, lambda h, s: s[2]
-extends_clause %= Hulk_G.Epsilon, lambda h, s: 'Object'
+extends_clause %= Hulk_G.Epsilon, lambda h, s: Token('Object', 'Object')
 
 # Loop Expression
 while_loop %= while_keyword + paren_open + expression + paren_close + expression, lambda h, s: WhileNode(s[3], s[5])

@@ -449,11 +449,13 @@ class MethodCallNode(CallNode):
 
     def __init__(
         self,
-        arguments: MemberAccessNode,
+        member_access: list[IdentifierNode],
+        arguments
     ) -> None:
 
-        super().__init__(arguments.arguments[-2], arguments)
-        self.type_identifier = arguments.arguments[-1]  # Siempre un IdentifierNode
+        super().__init__(member_access[-1], arguments)
+        self.type_identifier = member_access[-2]  # Siempre un IdentifierNode
+        self.member_access = member_access
         
 
 class MemberAccessNode:
