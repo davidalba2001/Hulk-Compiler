@@ -235,8 +235,6 @@ class TypeCheckerVisitor():
 
     #####================================================================================================#######
 
-
-#TODO: Revisar que esto pinche
     @visitor.when(AssignmentNode)
     def visit(self, node: AssignmentNode, scope: Scope):
         current_scope = scope.create_child()
@@ -265,16 +263,28 @@ class TypeCheckerVisitor():
     @visitor.when(DassignmentNode)
     def visit(self, node: DassignmentNode, scope: Scope):
         current_scope = scope.create_child()
-        var: VariableInfo = scope.find_variable(node.identifier.lex)
+        exp_type: Type = self.visit(node.expression, current_scope)
+        if isinstance(node.identifier, MemberAccessNode):
+            member = node.identifier
+            member_type = self.visit(member)
+            if isinstance(member_type, ErrorType): return ErrorType()
+            
+            exp_type: Type = self.visit(node.expression, current_scope)
+            if not exp_type.conforms_to(self.context.get_type(var.type)):
+                self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {self.context.get_type(var.type)} no puede ser asignada con el tipo {exp_type}'))
+                return ErrorType()
+            return member_type
+        
+        
         if not scope.is_defined(node.identifier.lex):
             self.errors.append(SemanticError(f'La variable {node.identifier.lex} no esta definida'))
             return ErrorType()
-        
-        exp_type: Type = self.visit(node.expression, current_scope)
+        var: VariableInfo = scope.find_variable(node.identifier.lex)
         if not exp_type.conforms_to(self.context.get_type(var.type)):
             self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {self.context.get_type(var.type)} no puede ser asignada con el tipo {exp_type}'))
             return ErrorType()
-        else: return self.context.get_type(var.type)
+        
+        return self.context.get_type(var.type)
 
 
     @visitor.when(FunctionCallNode)
@@ -481,5 +491,4 @@ class TypeCheckerVisitor():
                 self.errors.append(error)
                 return ErrorType()
         return var_type
-
 

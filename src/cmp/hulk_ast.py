@@ -555,7 +555,7 @@ class BindingNode(ExpressionNode):
         """
         super().__init__()
         # Se garantiza que siempre sea un IdentifierNode
-        self.identifier = IdentifierNode(identifier)
+        self.identifier = IdentifierNode(identifier) if not isinstance(identifier, MemberAccessNode) else identifier
         self.expression = expression  # Se espera que ya sea un ExpressionNode
 
 

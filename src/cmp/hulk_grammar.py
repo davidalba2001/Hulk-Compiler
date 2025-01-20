@@ -210,6 +210,7 @@ binding %= dassignment, lambda h, s: s[1]
 assignment %= identifier + optional_type_annotation + assign + expression, lambda h, s: AssignmentNode(s[1], s[2], s[4])
 # TODO: Se pudiera hacer una dassign y declarar nuevo type_annotation?
 dassignment %= identifier + dassign + expression, lambda h, s: DassignmentNode(s[1], s[3])
+dassignment %= member_access + dassign + expression, lambda h, s: DassignmentNode(MemberAccessNode(s[1]), s[3])
 
 # Type anotation
 type_annotation %= colon + identifier, lambda h, s: s[2]
@@ -254,6 +255,7 @@ protocol_decl %= protocol_keyword + identifier + extends_clause + brace_open + \
 protocol_body %= signatures, lambda h, s: s[1]
 
 annotation_params %= annotation_param + comma + annotation_params, lambda h, s: [s[1]] + s[3]
+annotation_params %= annotation_param, lambda h, s: [s[1]]
 annotation_params %= Hulk_G.Epsilon, lambda h, s: []
 annotation_param %= identifier + type_annotation, lambda h, s: (s[1], s[2])
 
