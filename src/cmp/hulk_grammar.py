@@ -267,7 +267,7 @@ signatures %= method_signature, lambda h, s: [s[1]]
 method_signature %= identifier + paren_open + annotation_params + paren_close + type_annotation + semicolon, lambda h, s: MethodNode(s[1],s[3],s[5])
 
 extends_clause %= extends_keyword + identifier, lambda h, s: s[2]
-extends_clause %= Hulk_G.Epsilon, lambda h, s: Token('Object', 'Object')
+extends_clause %= Hulk_G.Epsilon, lambda h, s: Token('Base', 'Base')
 
 # Loop Expression
 while_loop %= while_keyword + paren_open + expression + paren_close + expression, lambda h, s: WhileNode(s[3], s[5])

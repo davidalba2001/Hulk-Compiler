@@ -68,7 +68,7 @@ class TypeBuilderVisitor:
         except SemanticError:
             self.errors.append(
                 SemanticError(
-                    f"Parent type is already set for {node.identifier.lex} at line {node.line}."
+                    f"Parent type is already set for {node.identifier.lex} at line {node.identifier.line}."
                 )
             )
 
@@ -99,6 +99,8 @@ class TypeBuilderVisitor:
 
         for method in node.methods:
             self.visit(method)
+        
+        self.current_type.definition = node
 
         self.current_type = None
 
@@ -248,7 +250,6 @@ class TypeBuilderVisitor:
     @visitor.when(ProtocolNode)
     def visit(self, node: ProtocolNode):
         protocol = self.context.get_protocol(node.identifier.lex)
-        
         if isinstance(self.current_type, ErrorType):
             return
         
@@ -257,7 +258,7 @@ class TypeBuilderVisitor:
                 extend: Protocol = self.context.get_protocol(node.super_protocol.lex)
                 ancestor = extend
                 while ancestor:
-                    if ancestor.name == self.current_type.name:
+                    if ancestor.name == protocol.name:
                         self.errors.append(SemanticError(
                             f'Circular dependency detected involving protocol "{node.identifier.lex}" at line {node.identifier.line}.'))
                         break

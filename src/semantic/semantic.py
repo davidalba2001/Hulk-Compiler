@@ -57,13 +57,12 @@ class Type:
         self.arguments: list[Argument] = []
         self.attributes: list[Attribute] = []
         self.methods:dict[(str,int),Method] = {}
-        self.parent: Type = None
+        self.parent: Type = ObjectType() if name != 'Object' else None
         self.arguments_parent = None
         self.type_scope = Scope()
+        self.definition = None
 
     def set_parent(self, parent):
-        if self.parent is not None:
-            raise SemanticError(f'Parent type is already set for {self.name}.')
         self.parent = parent
 
     def get_attribute(self, name):
@@ -145,7 +144,9 @@ class Type:
         output += '}\n'
         return output
 
-
+class ObjectType(Type):
+    def __init__(self):
+        super().__init__('Object')
 class Protocol:
     def __init__(self, name: str):
         self.name = name
@@ -244,6 +245,12 @@ class VarType(Type):
 
     def __eq__(self, other):
         return isinstance(other, Type)
+class VectorType(Type):
+    def __init__(self, vtype):
+        super().__init__('Vector')
+        self.vector_type = vtype
+
+
 
 class Context:
     def __init__(self):
@@ -306,9 +313,19 @@ class Context:
     def __repr__(self) -> str:
         return str(self)
 class VariableInfo:
-    def __init__(self, name, vtype):
+    def __init__(self, name, vtype, instance):
         self.name = name
         self.type = vtype
+        self.instance:Instance = instance
+
+class Instance:
+    def __init__(self, insta_type: Type, a_scope = None, m_scope = None, args = {}, methods ={}) -> None:
+        self.insta_type = insta_type
+        self.att_scope: Scope = a_scope if a_scope else Scope()
+        self.met_scope: Scope = m_scope if m_scope else Scope()
+        self.args: dict[str, VariableInfo] = args
+        self.methods: dict[(str, int), Instance] = methods
+        
 
 class Scope:
     def __init__(self, parent=None):
@@ -326,8 +343,8 @@ class Scope:
         self.children.append(child)
         return child
 
-    def define_variable(self, vname, vtype):
-        info = VariableInfo(vname, vtype)
+    def define_variable(self, vname, vtype, instance = None):
+        info = VariableInfo(vname, vtype, instance if instance else Instance(vtype,Scope()))
         self.locals.append(info)
         return info
 
@@ -343,3 +360,26 @@ class Scope:
 
     def is_local(self, vname):
         return any(True for x in self.locals if x.name == vname)
+
+
+
+
+def encontrar_camino_hasta_raiz(tipo: Type):
+    camino = []
+    while tipo.parent is not tipo:
+        camino.append(tipo)
+        tipo = tipo.padre
+    return camino
+
+def lowest_common_ancestor(tipo1, tipo2):
+    # Encuentra los caminos hacia la raíz para ambos nodos
+    camino1 = encontrar_camino_hasta_raiz(tipo1)
+    camino2 = encontrar_camino_hasta_raiz(tipo2)
+
+    # Conviértelo a conjuntos para buscar ancestros comunes
+    set_camino2 = set(camino2)
+
+    # Recorre el camino de nodo1 buscando el primer ancestro común
+    for ancestro in camino1:
+        if ancestro in set_camino2:
+            return ancestro

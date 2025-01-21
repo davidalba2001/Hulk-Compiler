@@ -6,7 +6,7 @@ class Semantic_Check:
     def __init__(self):
         self.scope = Scope()
         self.context = Context()
-        self.default_types = ['Object', 'number', 'string', 'Boolean']
+        self.default_types = ['Object', 'Number', 'String', 'Boolean']
         self.default_functions = ['sen', 'cos', 'sqrt', 'exp', 'rand', 'log', 'print']
         self.errors = []
         for type in self.default_types:
@@ -15,7 +15,7 @@ class Semantic_Check:
         self.context.types[ErrorType().name] = ErrorType()
         for func in self.default_functions:
             self.context.functions[func] = None
-        self.context.create_protocol('Object')
+        self.context.create_protocol('Base')
     def semantic_checking(self, ast):
         type_collector = TypeCollectorVisitor(self.context, self.scope, self.errors)
         type_collector.visit(ast)
