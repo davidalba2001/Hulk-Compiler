@@ -144,12 +144,12 @@ member_access %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[
 member_list %= identifier + dot + member_list, lambda h, s: [IdentifierNode(s[1])] + s[3]
 member_list %= identifier, lambda h, s: [IdentifierNode(s[1])]
 
-relational_expr %= boolean_factor + less_than + boolean_factor, lambda h, s: LessThanNode(s[1], s[3])
-relational_expr %= boolean_factor + greater_than + boolean_factor, lambda h, s: GreaterThanNode(s[1], s[3])
-relational_expr %= boolean_factor + less_equal + boolean_factor, lambda h, s: LessEqualNode(s[1], s[3])
-relational_expr %= boolean_factor + greater_equal + boolean_factor, lambda h, s: GreaterEqualNode(s[1], s[3])
-relational_expr %= boolean_factor + equal + boolean_factor, lambda h, s: EqualNode(s[1], s[3])
-relational_expr %= boolean_factor + not_equal + boolean_factor, lambda h, s: NotEqualNode(s[1], s[3])
+relational_expr %= string_expr + less_than + string_expr, lambda h, s: LessThanNode(s[1], s[3])
+relational_expr %= string_expr + greater_than + string_expr, lambda h, s: GreaterThanNode(s[1], s[3])
+relational_expr %= string_expr + less_equal + string_expr, lambda h, s: LessEqualNode(s[1], s[3])
+relational_expr %= string_expr + greater_equal + string_expr, lambda h, s: GreaterEqualNode(s[1], s[3])
+relational_expr %= string_expr + equal + string_expr, lambda h, s: EqualNode(s[1], s[3])
+relational_expr %= string_expr + not_equal + string_expr, lambda h, s: NotEqualNode(s[1], s[3])
 
 # Functions Statmenets
 function_decl %= function_inline, lambda h, s: s[1]
