@@ -61,6 +61,7 @@ class Type:
         self.arguments_parent = None
         self.type_scope = Scope()
         self.definition = None
+        self.basic_instance = Instance(self)
 
     def set_parent(self, parent):
         self.parent = parent
@@ -169,7 +170,7 @@ class Protocol:
             self.methods[name,len(param_names)]
             raise SemanticError(f'Method "{name}" already defined in {self.name} with {len(param_names)} params')
         except KeyError:
-            self.methods[name,len(param_names)] = Method(name, param_names, param_types, return_type)
+            self.methods[name,len(param_names)] = Method(name, param_names, param_types, return_type, None)
             
         return True 
         
@@ -246,9 +247,8 @@ class VarType(Type):
     def __eq__(self, other):
         return isinstance(other, Type)
 class VectorType(Type):
-    def __init__(self, vtype):
+    def __init__(self):
         super().__init__('Vector')
-        self.vector_type = vtype
 
 
 
@@ -323,8 +323,8 @@ class Instance:
         self.insta_type = insta_type
         self.att_scope: Scope = a_scope if a_scope else Scope()
         self.met_scope: Scope = m_scope if m_scope else Scope()
-        self.args: dict[str, VariableInfo] = args
-        self.methods: dict[(str, int), Instance] = methods
+        self.attr: dict[str, VariableInfo] = args
+        self.methods: dict[(str, int), Method] = methods
         
 
 class Scope:
@@ -366,9 +366,9 @@ class Scope:
 
 def encontrar_camino_hasta_raiz(tipo: Type):
     camino = []
-    while tipo.parent is not tipo:
+    while tipo.parent:
         camino.append(tipo)
-        tipo = tipo.padre
+        tipo = tipo.parent
     return camino
 
 def lowest_common_ancestor(tipo1, tipo2):
@@ -383,3 +383,8 @@ def lowest_common_ancestor(tipo1, tipo2):
     for ancestro in camino1:
         if ancestro in set_camino2:
             return ancestro
+        
+class VectorInstance(Instance):
+    def __init__(self, vector_type):
+        super().__init__(VectorType())
+        self.type = vector_type

@@ -19,7 +19,7 @@ protocol Hashable {
 protocol Equatable extends Hashable {
     equals(other: Object): Boolean;
 }
-protocol Iterable {
+protocol Iterable_T {
     next() : Boolean;
     current() : Object;
 }
@@ -28,7 +28,7 @@ type Range(min:Number, max:Number) {
     max = max;
     current = min - 1;
 
-    next(): Boolean => (current := self.current + 1) < self.max;
+    next(): Boolean => (self.current := self.current + 1) < self.max;
     current(): Number => self.current;
 }
 type Point(x,y) {
@@ -44,8 +44,8 @@ type Point(x,y) {
 type PolarPoint(phi, rho) inherits Point(rho * sin(phi), rho * cos(phi)) {
     rho() => sqrt(self.getX() ^ 2 + self.getY() ^ 2);
 }
-type Knight inherits Person {
-    name() => "Sir" @@ base();
+type Knight(x, y) inherits Person(x, y) {
+    name() => "Sir" @@ "Gustavo";
 }
 type Person(firstname, lastname) {
     firstname = firstname;
@@ -87,8 +87,6 @@ type C inherits A {
         print(sin(PI/2));
         print("Hello World");
     };
-
-
     print(tan(PI) * 2 + cot(PI) * 2);
 
     let msg = "Hello World" in print(msg);
@@ -190,6 +188,6 @@ type C inherits A {
     let Numbers = [1,2,3,4,5,6,7,8,9] in print(Numbers[7]);
     let squares = [x^2 || x in range(1,10)] in print(x); // error
     let squares = [x^2 || x in range(1,10)] in for (x in squares) print(x);
-    let x : Hashable = new Person() in print(x.hash());
+    let x : Hashable = new Person("Felipe", "hernadez") in print(x.hash());
     let x : Hashable = new Point(0,0) in print(x.hash()); // error
 };
