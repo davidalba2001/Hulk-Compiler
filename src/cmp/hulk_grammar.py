@@ -86,6 +86,7 @@ expression_block %= brace_open + statement_block + brace_close, lambda h, s: Blo
 
 # Expressions
 expression %= string_expr, lambda h, s: s[1]
+expression %= relational_expr, lambda h, s: s[1]
 expression %= let_expr, lambda h, s: s[1]
 expression %= dassignment, lambda h, s: s[1]
 expression %= conditional_expr, lambda h, s: s[1]
@@ -120,7 +121,6 @@ factor %= boolean_expr, lambda h, s: s[1]
 boolean_expr %= boolean_expr + pipe + boolean_factor, lambda h, s: OrNode(s[1], s[3])
 boolean_expr %= boolean_expr + and_op + boolean_factor, lambda h, s: AndNode(s[1], s[3])
 boolean_expr %= not_op + boolean_factor, lambda h, s: NotNode(s[2])
-boolean_expr %= relational_expr, lambda h, s: s[1]
 boolean_expr %= boolean_factor, lambda h, s: s[1]
 
 boolean_factor %= string_literal, lambda h, s: StringNode(s[1])
