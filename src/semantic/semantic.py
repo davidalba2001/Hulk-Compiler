@@ -262,6 +262,7 @@ class Context:
         if name in self.types:
             raise SemanticError(f'The type name "{name}" has already been taken.')
         typex = Type(name)
+        typex.basic_instance = Instance(typex)
         self.types[name] = typex
         return typex
     
@@ -313,17 +314,17 @@ class Context:
     def __repr__(self) -> str:
         return str(self)
 class VariableInfo:
-    def __init__(self, name, vtype, instance):
+    def __init__(self, name, vtype, instance = None):
         self.name = name
         self.type = vtype
         self.instance:Instance = instance
 
 class Instance:
-    def __init__(self, insta_type: Type, a_scope = None, m_scope = None, args = {}, methods ={}) -> None:
+    def __init__(self, insta_type: Type, a_scope = None, m_scope = None, att = None, methods ={}) -> None:
         self.insta_type = insta_type
         self.att_scope: Scope = a_scope if a_scope else Scope()
         self.met_scope: Scope = m_scope if m_scope else Scope()
-        self.attr: dict[str, VariableInfo] = args
+        self.attr: dict[str, VariableInfo] = att if att else {}
         self.methods: dict[(str, int), Method] = methods
         
 
@@ -385,6 +386,11 @@ def lowest_common_ancestor(tipo1, tipo2):
             return ancestro
         
 class VectorInstance(Instance):
-    def __init__(self, vector_type):
+    def __init__(self, vector_type, vector=None):
         super().__init__(VectorType())
         self.type = vector_type
+        self.vector = vector
+class LiteralInstance(Instance):
+    def __init__(self, insta_type, value):
+        super().__init__(insta_type)
+        self.value = value

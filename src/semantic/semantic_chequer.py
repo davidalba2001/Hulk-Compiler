@@ -2,6 +2,7 @@ from semantic.semantic import*
 from semantic.type_builder import TypeBuilderVisitor
 from semantic.type_checker import TypeCheckerVisitor
 from semantic.type_collector import TypeCollectorVisitor
+from interpreter.interpreter_visitor import InterpreterVisitor
 class Semantic_Check:
     def __init__(self):
         self.scope = Scope()
@@ -36,3 +37,7 @@ class Semantic_Check:
         type_checker.visit(ast)
         if len(type_checker.errors) > 0:
             return type_checker.errors
+        
+    def interpreter(self, ast):
+        interpreter = InterpreterVisitor(self.context, self.scope)
+        interpreter.visit(ast, interpreter.scope)

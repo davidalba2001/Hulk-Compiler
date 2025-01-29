@@ -9,20 +9,23 @@ def main():
     lexer = Lexer(HulkLang.lexer_table(), "eof")
     parser = LR1Parser(Hulk_G)
 
-    with open("src/tests/test.hulk", "r") as file:
+    with open("src/tests/test_interpreter.hulk", "r") as file:
         text = file.read()
 
     try:
         tokens = lexer(text)
         parse, operations = parser(tokens)
         ast = evaluate_reverse_parse(parse, operations, tokens)
-        print("VIVA CUBA LIBRE ABAJO LA DICTADURA")
+        semantic = Semantic_Check()
+        errors = semantic.semantic_checking(ast)
+        if errors: print(errors)
+        else:
+            semantic.interpreter(ast)
     except SyntaxError as error:
         print(error)
 
     
-    semantic = Semantic_Check()
-    print(semantic.semantic_checking(ast))
+
 
 if __name__ == "__main__":
     main()

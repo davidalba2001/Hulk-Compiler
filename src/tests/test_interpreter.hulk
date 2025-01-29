@@ -1,0 +1,18 @@
+
+type Point(x,y) {
+    x = x + 1;
+    y = y + 2;
+
+}
+
+type Pointer(x){
+    x: Point = x;
+}
+
+{
+    let a = new Point(2 , 2) in {
+        let b = new Pointer(2) in b.x.x;
+    };
+};
+
+
