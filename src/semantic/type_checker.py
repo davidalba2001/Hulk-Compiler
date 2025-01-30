@@ -51,7 +51,6 @@ class TypeCheckerVisitor():
         methods_scope.define_variable('self', node.identifier.lex, current.basic_instance)
         for meth in node.methods:
             self.visit(meth, methods_scope)
-        print('aqui')
     
     @visitor.when(LetNode)
     def visit(self, node: LetNode, scope: Scope):
@@ -285,10 +284,10 @@ class TypeCheckerVisitor():
         
         exp_type: Instance = self.visit(node.expression, current_scope)
         if not protocol and not exp_type.insta_type.conforms_to(annotation):
-            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {annotation} no puede ser asignada con el tipo {exp_type.insta_type.name}, Linia: {node.identifier.line}'))
+            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {annotation.name} no puede ser asignada con el tipo {exp_type.insta_type.name}, Linia: {node.identifier.line}'))
             return Instance(ErrorType(), self.scope, self.scope)
         elif protocol and not annotation.implemented_by(exp_type.insta_type):
-            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {annotation} no puede ser asignada con el tipo {exp_type.insta_type.name}, Linia: {node.identifier.line}'))
+            self.errors.append(SemanticError(f'La variable {node.identifier.lex} de tipo {annotation.name} no puede ser asignada con el tipo {exp_type.insta_type.name}, Linia: {node.identifier.line}'))
             return Instance(ErrorType(), self.scope, self.scope)
         elif not protocol:
             return exp_type
@@ -467,7 +466,7 @@ class TypeCheckerVisitor():
         elif iterand.insta_type.name == "Vector":
             ident_type = iterand.type.basic_instance
         elif not iterable.implemented_by(iterand.insta_type):
-            self.errors.append(SemanticError(f'El iterador proporcionado no implementa iterable'))
+            self.errors.append(SemanticError(f'El iterador proporcionado no implementa iterable, Linia: {node.identifier.line}'))
             return Instance(ErrorType(), self.scope, self.scope)
         else:
             ident_type = self.visit(iterand.methods[('current', 0)].definition, iterand.met_scope)
@@ -520,7 +519,7 @@ class TypeCheckerVisitor():
             if arg_instace.insta_type.conforms_to(self.context.get_type(var_t.arguments[i].atype)): 
                 instanc_scope.define_variable(var_t.arguments[i].name, var_t.arguments[i].atype, arg_instace )
             else:
-                self.errors.append(SemanticError(f'El argumento de la {i} esima posicion para instanciar el tipo {node.identifier.lex} debe ser de tipo {var_t.arguments[i].atype.name}, Linia : {node.identifier.line}'))
+                self.errors.append(SemanticError(f'El argumento de la posicion {i} para instanciar el tipo {node.identifier.lex} debe ser de tipo {var_t.arguments[i].atype.name}, Linia : {node.identifier.line}'))
 
         result = self.build_instance(var_t.definition, instanc_scope)
         return result
