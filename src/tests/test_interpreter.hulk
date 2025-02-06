@@ -1,4 +1,14 @@
+protocol Ialgo{
+    perro(x:Number, y:Number): Number;
+}
+type Iterator(init: Number, end: Number){
+    min = init;
+    max = end;
+    current = init -1;
 
+    next(): Boolean => (self.current := self.current+1) < self.max;
+    current() => self.current;
+}
 type Point(x,y) {
     x = x;
     y = y;
@@ -21,12 +31,10 @@ type Pointer(x){
 }
 
 {
-    let a =  new Point(1, 1) in {
-        print(a.x);
-        print(a.y);
-        a := new PolarPoint(0, 1);
-        print(a.x);
-        print(a.y);
+    let a =  [x*x || x in new Iterator(3, 7)] in {
+        for (x in a) {
+            print(x);
+        };
     };
 };
 

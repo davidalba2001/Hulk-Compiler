@@ -263,13 +263,14 @@ class TypeBuilderVisitor:
                             f'Circular dependency detected involving protocol "{node.identifier.lex}" at line {node.identifier.line}.'))
                         break
                     ancestor = ancestor.parent
+                protocol.parent = ancestor
             except:
                 self.errors.append(
                 SemanticError(
                     f"El protocolo {node.super_protocol.lex} extendido en el protocolo {node.identifier.lex} no esta definido {node.identifier.line}"
+                    )
                 )
-            )
-            return
+                return
 
         for method in node.body:
             try:

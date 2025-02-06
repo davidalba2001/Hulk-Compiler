@@ -68,7 +68,7 @@ class InterpreterVisitor:
         right: LiteralInstance = self.visit(node.right, scope)
         left = left.value
         right = right.value
-        return LiteralInstance(self.context.get_type('Number'),right + left) 
+        return LiteralInstance(self.context.get_type('Number'),left + right) 
     
     @visitor.when(MinusNode)
     def visit(self, node: MinusNode, scope: Scope):
@@ -76,7 +76,7 @@ class InterpreterVisitor:
         right: LiteralInstance = self.visit(node.right, scope)
         left = left.value
         right = right.value
-        return LiteralInstance(self.context.get_type('Number'), right - left) 
+        return LiteralInstance(self.context.get_type('Number'), left - right) 
     
     @visitor.when(MultiplyNode)
     def visit(self, node: MultiplyNode, scope: Scope):
@@ -331,15 +331,19 @@ class InterpreterVisitor:
                 result = self.visit(node.body, for_scope)
             return result
 
-
-        ident_type: Instance = self.visit(iterand.methods[('current', 0)].definition, iterand.met_scope)
-        for_scope.define_variable(node.identifier.lex, ident_type.insta_type.name, ident_type)
-        condition: LiteralInstance = self.visit(iterand.methods[('next', 0)].definition, iterand.met_scope)
-        while(condition):
-            result: Instance = self.visit(node.body, for_scope)
-            var: VariableInfo = for_scope.find_variable(node.identifier.lex)
-            var.instance = self.visit(iterand.methods[('current', 0)].definition, iterand.met_scope)
+        next_func: MethodNode = iterand.methods[('next', 0)].definition
+        next_func = MethodCallNode([node.iterable, next_func.identifier],[])
+        condition: LiteralInstance = self.visit(next_func, iterand.met_scope)
+        current: MethodNode = iterand.methods[('current', 0)].definition
+        current = MethodCallNode([node.iterable, current.identifier],[])
+        condition: LiteralInstance = self.visit(next_func, iterand.met_scope)
+        ident_type: Instance = self.visit(current, iterand.met_scope)
+        var: VariableInfo = for_scope.define_variable(node.identifier.lex, ident_type.insta_type, ident_type)
+        while(condition.value):
+            ident_type = self.visit(current, iterand.met_scope)
             condition: LiteralInstance = self.visit(iterand.methods[('next', 0)].definition, iterand.met_scope)
+            var: VariableInfo = for_scope.find_variable(node.identifier.lex)
+            result: Instance = self.visit(node.body, for_scope)
 
         
         return result
@@ -362,19 +366,36 @@ class InterpreterVisitor:
         elements = []
         elemnt_scope = scope.create_child()
         iterable_inst: Instance = self.visit(node.iterable, scope)
-        next_func: MethodNode = iterable_inst.methods[('next', 0)].definition
-        next_func = MethodCallNode([node.iterable, next_func.identifier])
-        current: MethodNode = iterable_inst.methods[('current', 0)].definition
-        current_i:Instance = self.visit(current, iterable_inst.met_scope)
-        var = elemnt_scope.define_variable(node.identifier.lex, current, current_i)
-        while(condition):
-            elements.append(self.visit(node.expression, elemnt_scope))
-            var: VariableInfo = elemnt_scope.find_variable(node.identifier.lex)
-            var.instance = self.visit(current, iterable_inst.met_scope)
-            condition: LiteralInstance = self.visit(next_func, iterable_inst.met_scope)
-        
+        if isinstance(iterable_inst, VectorInstance):
+            vector: list[Instance] = iterable_inst.vector
+            if len(vector) == 0: return None
+            vector_t = vector[0].insta_type
+            elemnt_scope.define_variable(node.identifier.lex, iterable_inst.insta_type)
+            for elemnt in vector:
+                var = elemnt_scope.find_variable(node.identifier.lex)
+                var.instance = elemnt
+                result: Instance = self.visit(node.expression, elemnt_scope)
+                elements.append(result)
+                vector_t = lowest_common_ancestor(result.insta_type, vector_t)
+            return VectorInstance(vector_t, elements)
 
-        return VectorInstance(vect_type.insta_type)
+            
+        next_func: MethodNode = iterable_inst.methods[('next', 0)].definition
+        condition: LiteralInstance = self.visit(next_func.body, iterable_inst.met_scope)
+        current: MethodNode = iterable_inst.methods[('current', 0)].definition
+        current_i:Instance = self.visit(current.body, iterable_inst.met_scope)
+        vector_t = current_i.insta_type
+        while(condition.value):
+            current_i:Instance = self.visit(current.body, iterable_inst.met_scope)
+            var = elemnt_scope.define_variable(node.identifier.lex, current_i.insta_type, current_i)
+            result: Instance = self.visit(node.expression, elemnt_scope)
+            elements.append(result)
+            vector_t = lowest_common_ancestor(result.insta_type, vector_t)
+            condition = self.visit(next_func.body, iterable_inst.met_scope)
+            var: VariableInfo = elemnt_scope.find_variable(node.identifier.lex)
+            var.instance = self.visit(current.body, iterable_inst.met_scope)
+
+        return VectorInstance(vector_t, elements)
     
     @visitor.when(VectorIndexNode)
     def visit(self, node: VectorIndexNode, scope: Scope):
@@ -386,8 +407,6 @@ class InterpreterVisitor:
             print(exc)
             return None
         return result
-
-
 
     ## Metodos auxiliares ##################################################################
    

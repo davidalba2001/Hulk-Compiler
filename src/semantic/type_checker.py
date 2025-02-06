@@ -552,11 +552,11 @@ class TypeCheckerVisitor():
         elemnt_scope = scope.create_child()
         iterable_inst: Instance = self.visit(node.iterable, scope)
         iter_protocol = self.context.get_protocol('Iterable')
-        if not (iter_protocol.implemented_by( iterable_inst.insta_type) or isinstance(iter_protocol, VectorInstance) or iterable_inst.insta_type.name == 'Range') or isinstance(iterable_inst.insta_type, ErrorType):
+        if not (iter_protocol.implemented_by( iterable_inst.insta_type) or not isinstance(iterable_inst, VectorInstance) or not (iterable_inst.insta_type.name == 'Range')) or isinstance(iterable_inst.insta_type, ErrorType):
             self.errors.append(SemanticError(f'El tipo {iterable_inst.insta_type.name} no implementa el protocolo Iterable'))
             return Instance(ErrorType())
-        next_func = iterable_inst.methods[('current', 0)].definition if not (isinstance(iter_protocol, VectorInstance) or iterable_inst.insta_type.name == 'Range') else None
-        elemnts_type: Instance = self.visit(next_func, iterable_inst.met_scope) if not (isinstance(iter_protocol, VectorInstance) or iterable_inst.insta_type.name == 'Range') else iterable_inst.type.basic_instance if isinstance(iter_protocol, VectorInstance) else Instance(self.context.get_type('Number'))
+        next_func = iterable_inst.methods[('current', 0)].definition if not (isinstance(iterable_inst, VectorInstance) or iterable_inst.insta_type.name == 'Range') else None
+        elemnts_type: Instance = self.visit(next_func, iterable_inst.met_scope) if not (isinstance(iterable_inst, VectorInstance) or iterable_inst.insta_type.name == 'Range') else iterable_inst.type.basic_instance if isinstance(iterable_inst, VectorInstance) else Instance(self.context.get_type('Number'))
         elemnt_scope.define_variable(node.identifier.lex, elemnts_type.insta_type.name, elemnts_type)
         vect_type = self.visit(node.expression, elemnt_scope)
         return VectorInstance(vect_type.insta_type)
